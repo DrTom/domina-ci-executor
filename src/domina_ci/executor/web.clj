@@ -4,6 +4,7 @@
     [compojure.handler]
     [ring.adapter.jetty :as jetty]
     [clojure.pprint :as pprint]
+    [domina-ci.executor.certificate :as certificate]
     ))
 
 (defn say-hello []
@@ -18,7 +19,14 @@
   (-> (compojure.handler/site app-routes)))
 
 (defn start-server []
-  (def server (jetty/run-jetty app {:port 8080,:ssl? true, :join? false})))
+  (let [keystore (certificate/create-keystore-with-certificate)]
+    (def server (jetty/run-jetty app {
+                                      :port 8080
+                                      :ssl-port 8443
+                                      :ssl? true 
+                                      :keystore (.getAbsolutePath (:file keystore))
+                                      :key-password (:password keystore)
+                                      :join? false}))))
 
 (defn stop-server []
   (. server stop))
