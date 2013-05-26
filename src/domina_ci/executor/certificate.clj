@@ -1,10 +1,11 @@
 (ns domina-ci.executor.certificate
   (:import
-    [java.security KeyPairGenerator Security SecureRandom]
+    [java.security KeyPairGenerator KeyStore Security SecureRandom]
     [org.bouncycastle.jce X509Principal]
     [org.bouncycastle.jce.provider BouncyCastleProvider]
     [org.bouncycastle.x509 X509V3CertificateGenerator]
     [java.util Date]
+    [java.io File]
     ))
 
 (defn create-certificate []
@@ -28,5 +29,27 @@
 
     {:certificate (.generateX509Certificate cert_gen (.getPrivate key-pair))
     :key-pair key-pair}
-    
+
+    ))
+
+(defn create-tmp-keystore-file []
+  (let [ keystore-file (File/createTempFile "domina_ci_jvm_executor_", ".keystore") ]
+    (.deleteOnExit keystore-file)
+    keystore-file))
+
+(defn create-keystore-and-save-certificate [certificate keystore-file]
+  (let [keystore (KeyStore/getInstance "JKS") 
+        cert-alias "Unsigned DominaCI Executor Certificate"  
+        public-key (.getPrivate (:key-pair certificate))
+        password (.toCharArray (.toString (java.util.UUID/randomUUID)))
+        ]
+    (.load keystore nil nil)
+    (.setKeyEntry keystore cert-alias public-key password (into-array [(:certificate certificate)]))
+  ))
+
+(defn create-keystore-with-certificate []
+  (let [certificate (create-certificate)
+        keystore-file (create-tmp-keystore-file)
+        _ (create-keystore-and-save-certificate certificate keystore-file)
+        ]
     ))
