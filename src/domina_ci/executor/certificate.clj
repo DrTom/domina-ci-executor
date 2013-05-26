@@ -8,7 +8,7 @@
     [java.io File FileOutputStream]
     ))
 
-(defn create-certificate []
+(defn- create-certificate []
 
   (Security/addProvider (BouncyCastleProvider.))
 
@@ -32,12 +32,12 @@
 
     ))
 
-(defn create-tmp-keystore-file []
+(defn- create-tmp-keystore-file []
   (let [ keystore-file (File/createTempFile "domina_ci_jvm_executor_", ".keystore") ]
     (.deleteOnExit keystore-file)
     keystore-file))
 
-(defn create-keystore-and-save-certificate [certificate keystore-file]
+(defn- create-keystore-and-save-certificate [certificate keystore-file]
   (let [keystore (KeyStore/getInstance "JKS") 
         cert-alias "Unsigned DominaCI Executor Certificate"  
         private-key (.getPrivate (:key-pair certificate))
@@ -51,6 +51,9 @@
   ))
 
 (defn create-keystore-with-certificate []
+  "creates a self signed certificate in a keystore-file, 
+  convenient for running a ring adapter with ssl, 
+  returns a map with :password and :file among others"
   (let [certificate (create-certificate)
         keystore-file (create-tmp-keystore-file) ]
     (create-keystore-and-save-certificate certificate keystore-file)))
