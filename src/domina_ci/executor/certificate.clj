@@ -11,22 +11,22 @@
 
   (Security/addProvider (BouncyCastleProvider.))
 
-  (let [generator (.getInstace KeyPairGenerator "RSA")
+  (let [generator (KeyPairGenerator/getInstance  "RSA")
         _  (.initialize generator 2048 (SecureRandom.))
         key-pair (.generateKeyPair generator)
         cert_gen (X509V3CertificateGenerator.) 
         year_in_millis (* 1000 60 60 24 365)
         ]
 
-    (.setSerialNumber cert_gen  (rand-int 1000000000))
-    (.setIssuerDN cert_gen (X509Principal. "CN=cn, O=o, L=L, ST=il, C= c"))
-    (.setSubjectDN cert_gen (X509Principal. "CN=cn, O=o, L=L, ST=il, C= c"))
+    (.setSerialNumber cert_gen  (biginteger (rand-int 1000000000)))
+    (.setIssuerDN cert_gen (X509Principal. "CN=cn, O=o, L=L, ST=il, C=c"))
+    (.setSubjectDN cert_gen (X509Principal. "CN=cn, O=o, L=L, ST=il, C=c"))
     (.setNotBefore cert_gen (Date. (- (System/currentTimeMillis) year_in_millis )))
-    (.setNotAfter cert_gen (Date. (+ (System/currentTimeMillis) (* year_in_millis * 100))))
+    (.setNotAfter cert_gen (Date. (+ (System/currentTimeMillis) (* year_in_millis 100))))
     (.setPublicKey cert_gen (.getPublic key-pair))
     (.setSignatureAlgorithm cert_gen "SHA256WithRSAEncryption")
 
-    ;{:certificate (.generateX509Certificate cert_gen (.getPrivate key-pair))
-    ;:key-pair key-pair}
+    {:certificate (.generateX509Certificate cert_gen (.getPrivate key-pair))
+    :key-pair key-pair}
     
     ))
