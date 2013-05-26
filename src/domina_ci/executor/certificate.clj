@@ -5,7 +5,7 @@
     [org.bouncycastle.jce.provider BouncyCastleProvider]
     [org.bouncycastle.x509 X509V3CertificateGenerator]
     [java.util Date]
-    [java.io File]
+    [java.io File FileOutputStream]
     ))
 
 (defn create-certificate []
@@ -27,7 +27,7 @@
     (.setPublicKey cert_gen (.getPublic key-pair))
     (.setSignatureAlgorithm cert_gen "SHA256WithRSAEncryption")
 
-    {:certificate (.generateX509Certificate cert_gen (.getPrivate key-pair))
+    {:x509cert (.generateX509Certificate cert_gen (.getPrivate key-pair))
     :key-pair key-pair}
 
     ))
@@ -40,16 +40,17 @@
 (defn create-keystore-and-save-certificate [certificate keystore-file]
   (let [keystore (KeyStore/getInstance "JKS") 
         cert-alias "Unsigned DominaCI Executor Certificate"  
-        public-key (.getPrivate (:key-pair certificate))
-        password (.toCharArray (.toString (java.util.UUID/randomUUID)))
+        private-key (.getPrivate (:key-pair certificate))
+        password (.toString (java.util.UUID/randomUUID))
+        password_char_array (.toCharArray password)
         ]
     (.load keystore nil nil)
-    (.setKeyEntry keystore cert-alias public-key password (into-array [(:certificate certificate)]))
+    (.setKeyEntry keystore cert-alias private-key password_char_array (into-array [(:x509cert certificate)]))
+    (.store keystore (FileOutputStream. keystore-file) password_char_array )
+    (conj certificate {:file keystore-file, :password password})
   ))
 
 (defn create-keystore-with-certificate []
   (let [certificate (create-certificate)
-        keystore-file (create-tmp-keystore-file)
-        _ (create-keystore-and-save-certificate certificate keystore-file)
-        ]
-    ))
+        keystore-file (create-tmp-keystore-file) ]
+    (create-keystore-and-save-certificate certificate keystore-file)))
