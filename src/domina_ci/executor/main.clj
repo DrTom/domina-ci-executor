@@ -1,11 +1,8 @@
 (ns domina-ci.executor.main
-  (:gen-class))
+  (:gen-class)
+  (:require [domina-ci.executor.web :as web]))
 
-
-(defn start-webserver []
-  )
 
 (defn -main
   [& args]
-
-  )
+  (web/start-server))
