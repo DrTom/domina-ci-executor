@@ -5,15 +5,21 @@
     [ring.adapter.jetty :as jetty]
     [clojure.pprint :as pprint]
     [domina-ci.executor.certificate :as certificate]
+    [domina-ci.executor.execution :as execution]
     ))
 
 (defn say-hello []
   (str "<h1>Hello!</h1>"))
 
+(defn create-execution [request] 
+  (pprint/pprint request)
+  (execution/create-and-process-execution (:params request) nil)
+  {:status 201
+   :body(with-out-str (pprint/pprint request)) })
+
 (compojure.core/defroutes app-routes
   (compojure.core/GET "/hello" [] (say-hello))
-  (compojure.core/POST "/execute/" [] ())
-  )
+  (compojure.core/POST "/execute" req (create-execution req)))
 
 (def app
   (-> (compojure.handler/site app-routes)))
