@@ -68,6 +68,7 @@
                          ))))
 
 (defn swap-in-execution-params [uuid params]
+  "patches the current params for uuid with the given one"  
   (swap! core/executions
          (fn [executions uuid params]
            (let [current-execution-params (or (executions uuid) {})]
@@ -80,22 +81,13 @@
     (swap! core/executions 
            (fn [executions uuid params] (conj executions {uuid params}))
            uuid params)
-
     (let [execution (execute-script 
                     (:script params)
                     (fn [result]
                       (let [ params-with-result (conj result { :state (condp = (:exit-value result) 
                                                                         0 "success" 
-                                                                        "failed")
-                                                              })]
-
-                        (swap! core/executions
-                               (fn [executions uuid params-with-result]
-                                 (conj executions {uuid (conj (executions uuid) params-with-result)}))
-                               uuid params-with-result)
-
+                                                                        "failed") })]
+                        (swap-in-execution-params uuid params-with-result)
                         (result-handler params-with-result)
-
-                        )))]
-      
-      )))
+                        )))] 
+      execution)))
