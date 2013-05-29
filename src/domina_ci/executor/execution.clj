@@ -88,6 +88,7 @@
                                                                         0 "success" 
                                                                         "failed") })]
                         (swap-in-execution-params uuid params-with-result)
-                        (result-handler params-with-result)
+                        (if result-handler (result-handler params-with-result))
                         )))] 
       execution)))
+
