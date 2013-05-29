@@ -84,7 +84,7 @@
     (let [execution (execute-script 
                     (:script params)
                     (fn [result]
-                      (let [ params-with-result (conj result { :state (condp = (:exit-value result) 
+                      (let [ params-with-result (conj params result { :state (condp = (:exit-value result) 
                                                                         0 "success" 
                                                                         "failed") })]
                         (swap-in-execution-params uuid params-with-result)
