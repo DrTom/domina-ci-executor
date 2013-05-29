@@ -68,7 +68,7 @@
                          ))))
 
 (defn swap-in-execution-params [uuid params]
-  "patches the current params for uuid with the given one"  
+  "Patches the current params for uuid with the given one."  
   (swap! core/executions
          (fn [executions uuid params]
            (let [current-execution-params (or (executions uuid) {})]
@@ -77,18 +77,20 @@
          uuid params))
 
 (defn create-and-process-execution [params result-handler]
+  "Wraps around execute-script and places the params and later ammends with the
+  result into core/executions under the uuid key.  Returns (almost)
+  immediatelly and calls the result-handler with the result in a different
+  thread."
   (let [uuid (:uuid params)]
-    (swap! core/executions 
-           (fn [executions uuid params] (conj executions {uuid params}))
-           uuid params)
+    (swap-in-execution-params uuid params)
     (let [execution (execute-script 
-                    (:script params)
-                    (fn [result]
-                      (let [ params-with-result (conj params result { :state (condp = (:exit-value result) 
-                                                                        0 "success" 
-                                                                        "failed") })]
-                        (swap-in-execution-params uuid params-with-result)
-                        (if result-handler (result-handler params-with-result))
-                        )))] 
+                      (:script params)
+                      (fn [result]
+                        (let [ params-with-result (conj params result { :state (condp = (:exit-value result) 
+                                                                                 0 "success" 
+                                                                                 "failed") })]
+                          (swap-in-execution-params uuid params-with-result)
+                          (if result-handler (result-handler params-with-result))
+                          )))] 
       execution)))
 
