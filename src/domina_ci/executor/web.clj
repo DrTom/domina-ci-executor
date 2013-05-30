@@ -6,6 +6,7 @@
     [clojure.pprint :as pprint]
     [domina-ci.executor.certificate :as certificate]
     [domina-ci.executor.execution :as execution]
+    [domina-ci.executor.report :as report]
     ))
 
 (defn say-hello []
@@ -13,7 +14,7 @@
 
 (defn create-execution [request] 
   (pprint/pprint request)
-  (execution/create-and-process-execution (:params request) nil)
+  (execution/create-and-process-execution (:params request) report/send-execution-update-to-server)
   {:status 201
    :body(with-out-str (pprint/pprint request)) })
 

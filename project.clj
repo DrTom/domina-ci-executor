@@ -5,6 +5,7 @@
             :url "http://www.gnu.org/licenses/agpl-3.0.html"}
   :dependencies [
                  [clj-http "0.7.2"]
+                 [clj-time "0.5.1"]
                  [compojure "1.1.5"]
                  [org.bouncycastle/bcpkix-jdk15on "1.48"]
                  [org.bouncycastle/bcprov-jdk15on "1.48"]
