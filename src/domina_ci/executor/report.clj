@@ -16,7 +16,8 @@
    (let [data (select-keys params [:state :stdout :stderr])]
      (try
        (logging/info (str data))
-       (http-client/patch
+       ; TODO see if and how we can use patch
+       (http-client/put
          (:patch_url params)
          {:insecure? true
           :content-type :json
