@@ -1,8 +1,10 @@
 (ns domina-ci.executor.execution
   (:require 
+    [clj-time.core :as time]
     [clojure.pprint :as pprint]
-    [domina-ci.executor.core :as core]
     [clojure.stacktrace :as stacktrace]
+    [domina-ci.executor.core :as core]
+    [domina-ci.executor.util :as util]
     )
   (:import 
     [java.io File ])
@@ -81,14 +83,18 @@
   result into core/executions under the uuid key.  Returns (almost)
   immediatelly and calls the result-handler with the result in a different
   thread."
-  (let [uuid (:uuid params)]
+  (let [uuid (:uuid params)
+        params  (conj params {:started_at (util/date-time-to-iso8601 (time/now))
+                              :state "executing"})]
     (swap-in-execution-params uuid params)
     (let [execution (execute-script 
                       (:script params)
                       (fn [result]
-                        (let [ params-with-result (conj params result { :state (condp = (:exit-value result) 
-                                                                                 0 "success" 
-                                                                                 "failed") })]
+                        (let [ params-with-result (conj params result {:state (condp = (:exit-value result) 
+                                                                                0 "successful" 
+                                                                                "failed") 
+                                                                       :finished_at (util/date-time-to-iso8601 (time/now))
+                                                                       })]
                           (swap-in-execution-params uuid params-with-result)
                           (if result-handler (result-handler params-with-result))
                           )))] 

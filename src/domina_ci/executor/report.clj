@@ -13,7 +13,7 @@
   ([params] (send-execution-update-to-server params 0)) 
   ([params count]
    (logging/info "updating task")
-   (let [data (select-keys params [:state :stdout :stderr])]
+   (let [data (select-keys params [:state :stdout :stderr :started_at :finished_at])]
      (try
        (logging/info (str data))
        ; TODO see if and how we can use patch
