@@ -17,7 +17,7 @@
     [clj-logging-config.log4j :only (set-logger!)]
     ))
 
-(set-logger! :level :debug)
+(set-logger! :level :info)
 
 (defn canonical-repository-path [prepository-id]
   (str (:git-repos-dir @shared/conf) (File/separator) prepository-id))

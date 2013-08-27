@@ -29,6 +29,7 @@
 (defn date-time-to-iso8601 [date-time]
   (time-format/unparse (time-format/formatters :date-time) date-time))
 
+(defn now-as-iso8601 [] (date-time-to-iso8601 (time/now)))
 
 (defn split-in-dirs [s]
   (let [dirs-seq1  (string/split s #"/")

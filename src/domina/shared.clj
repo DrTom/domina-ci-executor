@@ -13,18 +13,12 @@
     [clj-logging-config.log4j :only (set-logger!)]
     ))
 
-; TODO this should be all moved to its own ns; 
-; and core should be empty / removed entirely 
+(defonce conf (atom {:working-dir (str (System/getProperty "user.home") (File/separator) "domina_working-dir")
+                     :git-repos-dir (str (System/getProperty "user.home") (File/separator) "domina_git-repos-dir" )
+                     }))
 
-(def executions (atom {}))
-
-(def conf (atom {:report-retries 10
-                 :working-dir (str (System/getProperty "user.home") (File/separator) "domina_working-dir")
-                 :git-repos-dir (str (System/getProperty "user.home") (File/separator) "domina_git-repos-dir" )
-                 }))
 
 (defn initialize []
   (.mkdir (File. (:working-dir @conf)))
   (.mkdir (File. (:git-repos-dir @conf))))
-
 

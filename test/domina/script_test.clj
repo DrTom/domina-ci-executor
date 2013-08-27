@@ -17,8 +17,7 @@
 
   (testing "a successful script" 
 
-    (let [script-params {:execution_sha1 "a"
-                         :name "list-env"
+    (let [script-params {:name "list-env"
                          :body "env | sort"
                          :working-dir  (System/getProperty "user.home")
                          :domina_trial_uuid (util/random-uuid)
@@ -45,7 +44,7 @@
             (is (not= nil (re-find #"(?is)UUID" (:stdout res)))))
 
           (testing "the agent for the execution_sha1"
-            (let [exec-agent  (@script-exec-agents "a") ]
+            (let [exec-agent  (@script-exec-agents (:domina_execution_uuid script-params))]
               (testing "is present and is an agent"
                 (= (type exec-agent) clojure.lang.Agent))
               (testing "it stores the script result under its name" 

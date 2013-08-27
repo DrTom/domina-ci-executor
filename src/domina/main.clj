@@ -9,6 +9,7 @@
     )
   (:require 
     [clojure.tools.logging :as logging]
+    [domina.reporter :as reporter]
     [domina.shared :as shared]
     [domina.nrepl :as nrepl]
     [domina.util :as util]
@@ -25,6 +26,7 @@
   (util/try-read-and-apply-config 
     {:shared shared/conf 
      :nrepl nrepl/conf
+     :reporter reporter/conf
      :web web/conf} 
     "/etc/domina/conf.clj"
     "/etc/domina_conf.clj"

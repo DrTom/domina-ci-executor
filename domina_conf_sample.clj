@@ -1,7 +1,10 @@
-{:shared {:report-retries 10
-          ; :working-dir "/tmp/domina_working_dir"
+{
+ :shared {; :working-dir "/tmp/domina_working_dir"
           ; :git-repos-dir "/tmp/domina_git_repos" 
           }
+
+ :reporter {:max-retries 10
+            :retry-ms-factor 3000}
 
  :nrepl {:port 7888
          :bind "127.0.0.1"

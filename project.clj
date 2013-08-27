@@ -1,4 +1,4 @@
-(defproject domina_executor "0.1.0-SNAPSHOT"
+(defproject domina_executor "0.3.0"
   :description "Executor for the Domina CI System."
   :url "https://github.com/DrTom/domina-ci-executor"
   :license {:name "GNU Affero General Public License"

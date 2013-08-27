@@ -47,7 +47,7 @@
                              :started_at :finished_at])})))))
 
 (defn memoized-executor-exec [script]
-  (let [my-agent (script-exec-agent (:execution_sha1 script))]
+  (let [my-agent (script-exec-agent (:domina_execution_uuid script))]
     (send-off my-agent use-memoized-or-execute script)
     (await my-agent)
     (@my-agent (:name script))))
@@ -57,17 +57,22 @@
 (defn process [scripts process-result] 
   (logging/info (str "processing scripts: " scripts))
 
-  (loop [scripts scripts last-state "success"]
+  (loop [scripts scripts has-failures false]
     (if-let [script (first scripts)]
-      (let [script-exec-result (if (= last-state "success") 
-                                 (conj script
-                                   (if (:prepare_executor script)
-                                     (memoized-executor-exec script)
-                                     (exec/exec-script-for-params script)))
-                                 (conj script 
-                                       {:state "failed" 
-                                        :error "skipped because of previous failure"}))]
+      (let [script-exec-result 
+            (cond 
+              (not has-failures) (conj script (if (= true (:prepare_executor script))
+                                                (memoized-executor-exec script)
+                                                (exec/exec-script-for-params script)))
+
+              (= true (:post_process script)) (exec/exec-script-for-params script)
+
+              :else (conj script 
+                          {:state "skipped" 
+                           :error "skipped because of previous failure"})
+              )]
         (logging/debug "executed script: " script " with result: " script-exec-result)
-        (future (process-result script-exec-result))
-        (recur (rest scripts) (:state script-exec-result ))))))
+        (process-result script-exec-result)
+        (recur (rest scripts) 
+               (or has-failures  (not= "success" (:state script-exec-result))))))))
 
