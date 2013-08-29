@@ -20,8 +20,8 @@
     (let [script-params {:name "list-env"
                          :body "env | sort"
                          :working-dir  (System/getProperty "user.home")
-                         :domina_trial_uuid (util/random-uuid)
-                         :domina_execution_uuid (util/random-uuid)
+                         :domina-trial-uuid (util/random-uuid)
+                         :domina-execution-uuid (util/random-uuid)
                          }]
 
       (testing "invoking memoized-executor-exec" 
@@ -29,10 +29,10 @@
 
           (testing "the result contains the script execution result"
             (is (contains? res :error))
-            (is (contains? res :exit_status))
-            (is (contains? res :finished_at))
-            (is (contains? res :interpreter_command))
-            (is (contains? res :started_at))
+            (is (contains? res :exit-status))
+            (is (contains? res :finished-at))
+            (is (contains? res :interpreter-command))
+            (is (contains? res :started-at))
             (is (contains? res :state))
             (is (contains? res :stderr))
             (is (contains? res :stdout)))
@@ -44,7 +44,7 @@
             (is (not= nil (re-find #"(?is)UUID" (:stdout res)))))
 
           (testing "the agent for the execution_sha1"
-            (let [exec-agent  (@script-exec-agents (:domina_execution_uuid script-params))]
+            (let [exec-agent  (@script-exec-agents (:domina-execution-uuid script-params))]
               (testing "is present and is an agent"
                 (= (type exec-agent) clojure.lang.Agent))
               (testing "it stores the script result under its name" 
@@ -56,12 +56,12 @@
 
 
   (testing "a successful script" 
-    (let [script-params {:execution_sha1 "b"
+    (let [script-params {:execution-sha1 "b"
                          :name "failing one"
                          :body "env |sort; exit -1"
                          :working-dir  (System/getProperty "user.home")
-                         :domina_trial_uuid (util/random-uuid)
-                         :domina_execution_uuid (util/random-uuid)
+                         :domina-trial-uuid (util/random-uuid)
+                         :domina-execution-uuid (util/random-uuid)
                          }]
 
       (testing "invoking memoized-executor-exec" 
@@ -69,10 +69,10 @@
           (println (str res))
           (testing "the result contains the script execution result"
             (is (contains? res :error))
-            (is (contains? res :exit_status))
-            (is (contains? res :finished_at))
-            (is (contains? res :interpreter_command))
-            (is (contains? res :started_at))
+            (is (contains? res :exit-status))
+            (is (contains? res :finished-at))
+            (is (contains? res :interpreter-command))
+            (is (contains? res :started-at))
             (is (contains? res :state))
             (is (contains? res :stderr))
             (is (contains? res :stdout))))

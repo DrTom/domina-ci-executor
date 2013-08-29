@@ -54,28 +54,23 @@
 
 (defn create-repository-agent [repository-url repository-id]
   (swap! repositories (fn [repositories repository-url repository-id ]
-                        (conj repositories {repository-id (agent {:commit_ids #{} 
-                                                                  :repository_id repository-id
-                                                                  :repository_url repository-url
-                                                                  :repository_path (canonical-repository-path repository-id) } 
+                        (conj repositories {repository-id (agent {:commit-ids #{} 
+                                                                  :repository-id repository-id
+                                                                  :repository-url repository-url
+                                                                  :repository-path (canonical-repository-path repository-id) } 
                                                                  :error-mode :continue)})
                         )repository-url repository-id)
   (repository-agent repository-id))
 
 
-; TODO not good: 
-;
-; [clojure-agent-send-off-pool-17] debug domina.git - initialize-or-update-if-required{:commit_ids #{}, :repository_id nil, :repositor
-; y_url nil, :repository_path "/Users/thomas/domina_git-repos-dir/"}
-
 (defn initialize-or-update-if-required [agent-state repository-url repository-id commit-id]
   (logging/debug " initialize-or-update-if-required" agent-state repository-id repository-id commit-id)
-  (let [repository-path (:repository_path agent-state)]
+  (let [repository-path (:repository-path agent-state)]
     (if-not (.isDirectory (File. repository-path)) 
       (create-mirror-clone repository-url repository-path))
     (if-not (repository-includes-commit? repository-path commit-id)
       (update repository-path))
-    (conj agent-state {:commit_ids (conj (:commit_ids agent-state) commit-id)})))
+    (conj agent-state {:commit-ids (conj (:commit-ids agent-state) commit-id)})))
 
 (defn serialized-initialize-or-update-if-required [repository-url repository-id commit-id]
   (logging/debug " serialized-initialize-or-update-if-required " repository-url repository-id commit-id)
@@ -85,13 +80,13 @@
                              (create-repository-agent repository-url repository-id))
         state @repository-agent]
     (logging/debug repository-agent)
-    (if-not ((:commit_ids state) commit-id)
+    (if-not ((:commit-ids state) commit-id)
       (do 
         (logging/debug (str "sending-off and await initialize-or-update-if-required "))
         (send-off (@repositories repository-id) initialize-or-update-if-required 
                   repository-url repository-id commit-id)
         (await repository-agent)))
-    (:repository_path @repository-agent)))
+    (:repository-path @repository-agent)))
 
 
 (defn clone-to-working-dir [repository-path commit-id working-dir]
@@ -107,11 +102,11 @@
 (defn prepare-and-create-working-dir [params]
   (logging/debug "prepare-and-create-working-dir" str params)
   (let [repository-path (serialized-initialize-or-update-if-required 
-                          (:git_url params) (:git_repository_id params) (:git_commit_id params))
+                          (:git-url params) (:git-repository-id params) (:git-commit-id params))
         working-dir (str (:working-dir @shared/conf) (File/separator) (:uuid params)) ]
-    (clone-to-working-dir repository-path (:git_commit_id params) working-dir)
+    (clone-to-working-dir repository-path (:git-commit-id params) working-dir)
     (logging/debug "WORKING-DIR " working-dir)
-    (conj params {:working_dir working-dir})
+    (conj params {:working-dir working-dir})
     ))
 
 

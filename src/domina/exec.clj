@@ -54,7 +54,7 @@
        res (future-call #(apply shell/sh command-with-options)) 
        timeout-ms (* 1000 timeout) 
        ret-val (deref res timeout-ms {:exit -1 :out nil :err nil :error "timeout"})
-       extended-ret-val (conj ret-val {:interpreter_command command})
+       extended-ret-val (conj ret-val {:interpreter-command command})
        ]
       (logging/info (str "extended-env-variables " extended-env-variables))
       (logging/info (str "exec-script returns: " extended-ret-val))
@@ -62,32 +62,32 @@
       )))
 
 
-(defn prepare-env-variables [{ex-uuid :domina_execution_uuid trial-uuid :domina_trial_uuid :as params}]
+(defn prepare-env-variables [{ex-uuid :domina-execution-uuid trial-uuid :domina-trial-uuid :as params}]
   (util/upper-case-keys 
-    (conj params {:domina_trial_int (util/uuid-to-short trial-uuid)
-                  :domina_execution_int (util/uuid-to-short ex-uuid)
-                  })))
+    (util/rubyize-keys
+      (conj params {:domina-trial-int (util/uuid-to-short trial-uuid)
+                    :domina-execution-int (util/uuid-to-short ex-uuid)
+                    }))))
 
 (defn exec-script-for-params [params]
   (logging/info (str "exec-script-for-params" (select-keys params [:name])))
   (try
-    (let [started {:started_at (util/date-time-to-iso8601 (time/now))}
-          env-variables (prepare-env-variables params)
-          working-dir (:working_dir params)
+    (let [started {:started-at (util/date-time-to-iso8601 (time/now))}
+          env-variables (prepare-env-variables (:env-vars params))
+          working-dir (:working-dir params)
           timeout (or (:timeout params) 200)
-          exec-res (exec-script (:body params) :working-dir working-dir :env-variables env-variables :timeout timeout)]
-
+          exec-res (exec-script (:body params) :working-dir working-dir :env-variables env-variables :timeout timeout)] 
       (conj params 
             started 
-            {:finished_at (util/date-time-to-iso8601 (time/now))
-             :exit_status (:exit exec-res)
+            {:finished-at (util/date-time-to-iso8601 (time/now))
+             :exit-status (:exit exec-res)
              :state (condp = (:exit exec-res) 
                       0 "success" 
                       "failed")
              :stdout (:out exec-res)
              :stderr (:err exec-res) 
              :error (:error exec-res)
-             :interpreter_command (:intepreter exec-res)
+             :interpreter-command (:intepreter exec-res)
              }
             ))
     (catch Exception e

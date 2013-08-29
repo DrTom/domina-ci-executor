@@ -39,8 +39,12 @@
     ))
 
 
+; rather use key-fn option of json/write-str
 (defn upper-case-keys [some-hash]
   (into {} (map (fn [p] [ (string/upper-case (name (first p))) (second p)] ) some-hash)))
+
+(defn rubyize-keys [some-hash]
+  (into {} (map (fn [p] [(keyword (string/replace (name (first p)) #"-" "_")) (second p)] ) some-hash)))
 
 (defn hash-to-env-opts [h]
   (map #(str (string/upper-case (name (first %1))) "=" (last %1)) h))

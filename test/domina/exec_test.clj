@@ -33,16 +33,16 @@
   (let [def-params {:body "env | sort"
                     :working-dir  (System/getProperty "user.home")
                     :uuid (util/random-uuid)
-                    :domina_trial_uuid (util/random-uuid)
-                    :domina_execution_uuid (util/random-uuid)
+                    :domina-trial-uuid (util/random-uuid)
+                    :domina-execution-uuid (util/random-uuid)
                     }]
     (testing "invoking exec-script-for-params" 
       (let [res (exec-script-for-params def-params)]
         (is (contains? res :error))
-        (is (contains? res :exit_status))
-        (is (contains? res :finished_at))
-        (is (contains? res :interpreter_command))
-        (is (contains? res :started_at))
+        (is (contains? res :exit-status))
+        (is (contains? res :finished-at))
+        (is (contains? res :interpreter-command))
+        (is (contains? res :started-at))
         (is (contains? res :state))
         (is (contains? res :stderr))
         (is (contains? res :stdout))

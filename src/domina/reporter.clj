@@ -8,24 +8,29 @@
     [clj-time.core :as time]
     [clj-time.format :as time-format]
     [clojure.data.json :as json]
+    [clojure.string :as string]
     [clojure.tools.logging :as logging]
     ))
 
-(set-logger! :level :info)
+(set-logger! :level :debug)
 
 (defonce conf (atom {:max-retries 10
                      :retry-ms-factor 3000
                      }))
 
+(defn rubyize-keyword [kw]
+  (string/replace (name kw) "-" "_"))
+
 (defn put-as-json [url params]
   (logging/info "PUTTING to: " url)
-  (http-client/put
-    url
-    {:insecure? true
-     :content-type :json
-     :accept :json 
-     :body (json/write-str params)}))
-
+  (let [body (json/write-str params :key-fn rubyize-keyword)]
+    (logging/debug "body: " body)
+    (http-client/put
+      url
+      {:insecure? true
+       :content-type :json
+       :accept :json 
+       :body body})))
 
 (defn put-as-json-with-retries 
   ([url params]

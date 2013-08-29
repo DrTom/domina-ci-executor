@@ -19,7 +19,7 @@
 (defn send-as-json [url params retries-counter]
   (Thread/sleep (* retries-counter retries-counter 1000))
   (try
-    (logging/info (str "SENDING " (select-keys params [:name :state :exit_status]) url ))
+    (logging/info (str "SENDING " (select-keys params [:name :state :exit-status]) url ))
     (http-client/put
       url
       {:insecure? true

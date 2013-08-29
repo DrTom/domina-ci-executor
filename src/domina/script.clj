@@ -18,7 +18,7 @@
 ;; ### EXECUTOR AGENTS ########################################################
 
 ; handle prepare-executor scripts with an agent 
-(def script-exec-agents (atom {}))
+(defonce script-exec-agents (atom {}))
 
 (defn script-exec-agent [id]
   "returns (and creates if necessary) the agent for the executor"
@@ -42,12 +42,12 @@
         (conj agent-state 
               {(:name script) 
                (select-keys script-exec-result
-                            [:stderr :stdout :error :exit_status
-                             :state :interpreter_command 
-                             :started_at :finished_at])})))))
+                            [:stderr :stdout :error :exit-status
+                             :state :interpreter-command 
+                             :started-at :finished-at])})))))
 
 (defn memoized-executor-exec [script]
-  (let [my-agent (script-exec-agent (:domina_execution_uuid script))]
+  (let [my-agent (script-exec-agent (:domina-execution-uuid script))]
     (send-off my-agent use-memoized-or-execute script)
     (await my-agent)
     (@my-agent (:name script))))
@@ -61,11 +61,11 @@
     (if-let [script (first scripts)]
       (let [script-exec-result 
             (cond 
-              (not has-failures) (conj script (if (= true (:prepare_executor script))
+              (not has-failures) (conj script (if (= true (:prepare-executor script))
                                                 (memoized-executor-exec script)
                                                 (exec/exec-script-for-params script)))
 
-              (= true (:post_process script)) (exec/exec-script-for-params script)
+              (= true (:post-process script)) (exec/exec-script-for-params script)
 
               :else (conj script 
                           {:state "skipped" 
