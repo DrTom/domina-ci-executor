@@ -9,6 +9,7 @@
                  [clj-time "0.5.1"]
                  [compojure "1.1.5"]
                  [log4j/log4j "1.2.17" :exclusions [javax.mail/mail javax.jms/jms com.sun.jdmk/jmxtools com.sun.jmx/jmxri]]
+                 [me.raynes/fs "1.4.4"]
                  [org.bouncycastle/bcpkix-jdk15on "1.48"]
                  [org.bouncycastle/bcprov-jdk15on "1.48"]
                  [org.clojure/clojure "1.5.1"]

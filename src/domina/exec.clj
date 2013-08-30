@@ -19,6 +19,7 @@
     [clojure.stacktrace :only (print-stack-trace)]
     ))
 
+(set-logger! :level :debug)
 
 (def defaul-system-interpreter
   (condp = (clojure.string/lower-case (System/getProperty "os.name"))
