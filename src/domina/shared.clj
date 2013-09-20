@@ -13,6 +13,8 @@
     [clj-logging-config.log4j :only (set-logger!)]
     ))
 
+;(set-logger! :level :debug)
+
 (defonce conf (atom {:working-dir (str (System/getProperty "user.home") (File/separator) "domina_working-dir")
                      :git-repos-dir (str (System/getProperty "user.home") (File/separator) "domina_git-repos-dir" )
                      }))

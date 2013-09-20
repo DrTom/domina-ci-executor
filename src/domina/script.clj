@@ -12,7 +12,7 @@
     ))
 
 
-(set-logger! :level :info)
+;(set-logger! :level :debug)
 
 ;; ### EXECUTOR AGENTS ########################################################
 
@@ -58,32 +58,38 @@
 
   (loop [scripts scripts has-failures false]
     (if-let [script (first scripts)]
-      (let [script-exec-result 
 
-            (conj script 
+      (do 
+        (logging/debug "processing script: "  script)
+        (logging/debug "dispatching on the script type "  (:type script))
 
-                  (case (:type script)
-                    "prepare_executor" (memoized-executor-exec script)
+        (let [script-exec-result 
 
-                    ("main" nil) (if (not has-failures)
-                                   (exec/exec-script-for-params script)
-                                   {:state "skipped" 
-                                    :error "skipped because of previous failure"})
+              (conj script 
 
-                    "clanup_executor" (do
-                                        (logging/warn "TODO store and process cleanup-executor")
-                                        {:state "success" 
-                                         :stdout "Execution is deferred and might not be carried out at all."} )
+                    (case (:type script)
+
+                      "prepare_executor" (memoized-executor-exec script)
+
+                      ("main" nil) (if (not has-failures)
+                                     (exec/exec-script-for-params script)
+                                     {:state "skipped" 
+                                      :error "skipped because of previous failure"})
+
+                      "clanup_executor" (do
+                                          (logging/warn "TODO store and process cleanup-executor")
+                                          {:state "success" 
+                                           :stdout "Execution is deferred and might not be carried out at all."} )
 
 
-                    {:state "failure"
-                     :error (str "I don't know what to do with the type " (:type script) "\n" 
-                                 "The following types are handled: " "main" "prepare_executor" "post_process" "cleanup-executor" "\n"
-                                 "Undefined types will be handled like the main type."
-                                 )}))]
+                      {:state "failure"
+                       :error (str "I don't know what to do with the type " (:type script) "\n" 
+                                   "The following types are handled: " "main" "prepare_executor" "post_process" "cleanup-executor" "\n"
+                                   "Undefined types will be handled like the main type."
+                                   )}))]
 
-                  (logging/debug "executed script: " script " with result: " script-exec-result)
-                  (process-result script-exec-result)
-                  (recur (rest scripts) 
-                         (or has-failures  (not= "success" (:state script-exec-result))))))))
+          (logging/debug "executed script: " script " with result: " script-exec-result)
+          (process-result script-exec-result)
+          (recur (rest scripts) 
+                 (or has-failures  (not= "success" (:state script-exec-result)))))))))
 

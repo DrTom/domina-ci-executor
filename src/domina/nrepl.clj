@@ -12,7 +12,7 @@
     [clj-logging-config.log4j :only (set-logger!)]
     ))
 
-(set-logger! :level :info)
+;(set-logger! :level :debug)
 
 (defonce conf (atom {:port 7888
                      :bind "127.0.0.1"

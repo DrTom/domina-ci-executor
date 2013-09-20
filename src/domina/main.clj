@@ -19,10 +19,10 @@
     [clj-logging-config.log4j :only (set-logger!)]
     ))
 
-(set-logger! :level :info)
+;(set-logger! :level :debug)
 
 (defn read-config []
-  (logging/debug "read-config invoked")
+  (logging/info "read-config invoked")
   (util/try-read-and-apply-config 
     {:shared shared/conf 
      :nrepl nrepl/conf

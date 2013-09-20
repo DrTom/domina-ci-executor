@@ -13,8 +13,7 @@
     [me.raynes.fs :as fs]
     ))
 
-
-(set-logger! :level :debug)
+;(set-logger! :level :debug)
 
 (defn put [working-dir attachments url]
   (doseq [[_ {glob :glob content-type :content-type}] attachments]

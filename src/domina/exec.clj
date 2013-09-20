@@ -19,7 +19,7 @@
     [clojure.stacktrace :only (print-stack-trace)]
     ))
 
-(set-logger! :level :debug)
+;(set-logger! :level :debug)
 
 (def defaul-system-interpreter
   (condp = (clojure.string/lower-case (System/getProperty "os.name"))
@@ -57,8 +57,8 @@
        ret-val (deref res timeout-ms {:exit -1 :out nil :err nil :error "timeout"})
        extended-ret-val (conj ret-val {:interpreter-command command})
        ]
-      (logging/info (str "extended-env-variables " extended-env-variables))
-      (logging/info (str "exec-script returns: " extended-ret-val))
+      (logging/debug (str "extended-env-variables " extended-env-variables))
+      (logging/debug (str "exec-script returns: " extended-ret-val))
       extended-ret-val
       )))
 

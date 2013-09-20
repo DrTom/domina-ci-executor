@@ -3,5 +3,3 @@
 ; See the "LICENSE.txt" file provided with this software.
 
 (ns domina.scratch)
-
-(fn [x] (* x 5))

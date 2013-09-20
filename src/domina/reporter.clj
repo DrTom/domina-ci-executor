@@ -12,7 +12,7 @@
     [clojure.tools.logging :as logging]
     ))
 
-(set-logger! :level :debug)
+;(set-logger! :level :debug)
 
 (defonce conf (atom {:max-retries 10
                      :retry-ms-factor 3000

@@ -20,7 +20,7 @@
     [ring.middleware.json]
     ))
 
-(set-logger! :level :info)
+;(set-logger! :level :debug)
 
 (defonce conf (atom {:host "0.0.0.0"
                      :port 8088

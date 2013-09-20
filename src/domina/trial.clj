@@ -21,7 +21,7 @@
     [clj-logging-config.log4j :only (set-logger!)]
     ))
 
-(set-logger! :level :info)
+;(set-logger! :level :debug)
 
 (defonce report-agents (atom {}))
 
