@@ -64,6 +64,7 @@
 
 
 (defn prepare-env-variables [{ex-uuid :domina-execution-uuid trial-uuid :domina-trial-uuid :as params}]
+  (logging/debug ":domina-execution-uuid " ex-uuid ":domina-trial-uuid " trial-uuid)
   (util/upper-case-keys 
     (util/rubyize-keys
       (conj params {:domina-trial-int (util/uuid-to-short trial-uuid)

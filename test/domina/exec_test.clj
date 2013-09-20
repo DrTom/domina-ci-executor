@@ -33,8 +33,9 @@
   (let [def-params {:body "env | sort"
                     :working-dir  (System/getProperty "user.home")
                     :uuid (util/random-uuid)
-                    :domina-trial-uuid (util/random-uuid)
-                    :domina-execution-uuid (util/random-uuid)
+                    :env-vars {
+                               :domina-trial-uuid (util/random-uuid)
+                               :domina-execution-uuid (util/random-uuid)}
                     }]
     (testing "invoking exec-script-for-params" 
       (let [res (exec-script-for-params def-params)]

@@ -20,8 +20,9 @@
     (let [script-params {:name "list-env"
                          :body "env | sort"
                          :working-dir  (System/getProperty "user.home")
-                         :domina-trial-uuid (util/random-uuid)
-                         :domina-execution-uuid (util/random-uuid)
+                         :env-vars {
+                                    :domina-trial-uuid (util/random-uuid)
+                                    :domina-execution-uuid (util/random-uuid) }
                          }]
 
       (testing "invoking memoized-executor-exec" 
@@ -60,8 +61,9 @@
                          :name "failing one"
                          :body "env |sort; exit -1"
                          :working-dir  (System/getProperty "user.home")
-                         :domina-trial-uuid (util/random-uuid)
-                         :domina-execution-uuid (util/random-uuid)
+                         :env-vars {
+                                    :domina-trial-uuid (util/random-uuid)
+                                    :domina-execution-uuid (util/random-uuid)}
                          }]
 
       (testing "invoking memoized-executor-exec" 
