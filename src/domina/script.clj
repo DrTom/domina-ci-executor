@@ -60,19 +60,31 @@
   (loop [scripts scripts has-failures false]
     (if-let [script (first scripts)]
       (let [script-exec-result 
-            (cond 
-              (not has-failures) (conj script (if (= true (:prepare-executor script))
-                                                (memoized-executor-exec script)
-                                                (exec/exec-script-for-params script)))
 
-              (= true (:post-process script)) (exec/exec-script-for-params script)
+            (conj script 
 
-              :else (conj script 
-                          {:state "skipped" 
-                           :error "skipped because of previous failure"})
-              )]
-        (logging/debug "executed script: " script " with result: " script-exec-result)
-        (process-result script-exec-result)
-        (recur (rest scripts) 
-               (or has-failures  (not= "success" (:state script-exec-result))))))))
+                  (case (:type script)
+                    "prepare_executor" (memoized-executor-exec script)
+
+                    ("main" nil) (if (not has-failures)
+                                   (exec/exec-script-for-params script)
+                                   {:state "skipped" 
+                                    :error "skipped because of previous failure"})
+
+                    "clanup_executor" (do
+                                        (logging/warn "TODO store and process cleanup-executor")
+                                        {:state "success" 
+                                         :stdout "Execution is deferred and might not be carried out at all."} )
+
+
+                    {:state "failure"
+                     :error (str "I don't know what to do with the type " (:type script) "\n" 
+                                 "The following types are handled: " "main" "prepare_executor" "post_process" "cleanup-executor" "\n"
+                                 "Undefined types will be handled like the main type."
+                                 )}))]
+
+                  (logging/debug "executed script: " script " with result: " script-exec-result)
+                  (process-result script-exec-result)
+                  (recur (rest scripts) 
+                         (or has-failures  (not= "success" (:state script-exec-result))))))))
 
