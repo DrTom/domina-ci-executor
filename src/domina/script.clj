@@ -81,10 +81,11 @@
                                           {:state "success" 
                                            :stdout "Execution is deferred and might not be carried out at all."} )
 
+                      "post_process" (exec/exec-script-for-params script)
 
-                      {:state "failure"
+                      {:state "failed"
                        :error (str "I don't know what to do with the type " (:type script) "\n" 
-                                   "The following types are handled: " "main" "prepare_executor" "post_process" "cleanup-executor" "\n"
+                                   "The following types are handled: main prepare_executor post_process cleanup-executor \n"
                                    "Undefined types will be handled like the main type."
                                    )}))]
 
