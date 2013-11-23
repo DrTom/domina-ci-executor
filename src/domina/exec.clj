@@ -26,6 +26,7 @@
     "windows" ["cmd.exe" "/c"]
     ["bash" "-c"]))
 
+; TODO FIXME even though this times out; it seems that the process is not killed
 (defn exec-script 
   [script & {:keys [timeout working-dir env-variables interpreter] 
              :or {env-variables {}, 
