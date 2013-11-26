@@ -23,16 +23,6 @@
 
 ;(set-logger! :level :debug)
 
-(defonce report-agents (atom {}))
-
-(defn create-report-agent [id]
-  (let [new-agent (agent [] :error-mode :continue)
-        add-fn (fn[agents] 
-                 (conj agents {id new-agent})
-                 )]
-    (swap! report-agents add-fn)
-    new-agent))
-
 (defn create-update-sender-via-agent [report-agent]
   (fn [params]
     (let [url (:patch-url params)
@@ -47,17 +37,39 @@
    (conj (select-keys full-trial-params [:patch-url])
          params)))
 
+; 
+
+(defonce ^:private ports-in-usage (atom #{}))
+
+(defonce ^:private trials-atom (atom {}))
+
+(defn ^:private create-trial   
+  "Creates a new trial, stores it in trials under it's id and returns the
+  trial"
+  [params]
+  (let [id (:domina-trial-uuid params)]
+    (swap! trials-atom 
+           (fn [trials params id]
+             (conj trials {id {:params-atom (atom params)
+                               :report-agent (agent [] :error-mode :continue)}}))
+           params id)
+    (@trials-atom id)))
+
+; TODO
+; test it, it should run
+; update the params in place 
 
 (defn execute [params] 
   (logging/info execute params)
-  (let [report-agent (create-report-agent (:domina-trial-uuid params))]
+  (let [ext-prarams (git/prepare-and-create-working-dir params)
+        trial (create-trial ext-prarams)      
+        report-agent (:report-agent trial)]
     (future 
       (try 
         (send-trial-patch report-agent params  {:started-at (util/now-as-iso8601)})
-        (let [ext-prarams (git/prepare-and-create-working-dir params)
-              scripts (map (fn [script-params]
+        (let [scripts (map (fn [script-params]
                              (conj script-params (select-keys ext-prarams [:env-vars :domina-execution-uuid 
-                                                                          :domina-trial-uuid :working-dir ])))
+                                                                           :domina-trial-uuid :working-dir ])))
                            (:scripts params))]
           (logging/debug (str "processing scripts " (reduce (fn [s x] (str s " # " x)) scripts)))
           (script/process scripts (create-update-sender-via-agent report-agent))
