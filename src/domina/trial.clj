@@ -17,6 +17,7 @@
     [domina.reporter :as reporter]
     [domina.script :as script]
     [domina.util :as util]
+    [domina.with :as with]
     )
   (:use 
     [clj-logging-config.log4j :only (set-logger!)]
@@ -40,33 +41,6 @@
    (conj (select-keys params [:patch-url])
          patch-params)))
 
-(defonce ^:private ports-in-usage (atom #{}))
-
-(defonce ^:private trials-atom (atom {}))
-
-
-;(clojure.pprint/pprint trials-atom)
-
-(defn- prepare-scripts [params]
-  (map (fn [script-params]
-         (atom (conj script-params 
-                     (select-keys params
-                                  [:env-vars :domina-execution-uuid 
-                                   :domina-trial-uuid :working-dir ]))))
-       (:scripts params)))
- 
-(defn ^:private create-trial   
-  "Creates a new trial, stores it in trials under it's id and returns the
-  trial"
-  [params]
-  (let [id (:domina-trial-uuid params)]
-    (swap! trials-atom 
-           (fn [trials params id]
-             (conj trials {id {:params-atom (atom params)
-                               :scripts (prepare-scripts params)
-                               :report-agent (agent [] :error-mode :continue)}}))
-           params id)
-    (@trials-atom id)))
 
 (defn- set-and-send-start-params [params-atom report-agent]
   (let [start-params {:started-at (time/now) :state "executing"}]
@@ -81,6 +55,68 @@
            (fn [params finished-params] (conj params finished-params)) 
            finished-params)
     (send-trial-patch report-agent @params-atom finished-params)))
+
+
+(defn- prepare-scripts [params]
+  (map (fn [script-params]
+         (atom (conj script-params 
+                     (select-keys params
+                                  [:env-vars :domina-execution-uuid 
+                                   :domina-trial-uuid :working-dir ]))))
+       (:scripts params)))
+
+
+
+(defonce ^:private ports-in-usage (atom #{}))
+
+(defonce ^:private trials-atom (atom {}))
+
+;(clojure.pprint/pprint trials-atom)
+;
+(defn- create-trial   
+  "Creates a new trial, stores it in trials under it's id and returns the
+  trial"
+  [params]
+  (let [id (:domina-trial-uuid params)]
+    (swap! trials-atom 
+           (fn [trials params id]
+             (conj trials {id {:params-atom (atom params)
+                               :scripts (prepare-scripts params)
+                               :report-agent (agent [] :error-mode :continue)}}))
+           params id)
+    (@trials-atom id)))
+
+(defn- delete-trial [id trial]
+  (logging/debug "deleting trial " id)
+  (swap! trials-atom (fn [trials id] #(dissoc %1 %2) id)))
+
+
+; ### clean trials #######################################
+
+(def ;once 
+  ^:private trials-cleaner-stopped (atom false))
+
+(defn start-trials-cleaner []
+  (logging/info "started trials cleaner")
+  (swap! trials-cleaner-stopped (fn [_] false)) 
+  (future
+    (loop [] 
+      (with/logging-and-swallow
+        (doseq [[id trial] @trials-atom] 
+          (let [params @(:params-atom trial) 
+                timestamp (or (:finished-at params) (:started-at params))]
+            (when (> (time/in-minutes (time/interval timestamp (time/now))) 1); TODO increase
+              (delete-trial id trial)))))
+      (Thread/sleep (* 60 1000))
+      (if-not @trials-cleaner-stopped 
+        (recur)
+        (logging/info "stopped trials cleaner")))))
+
+(defn stop-trials-cleaner []
+  (swap! trials-cleaner-stopped (fn [_] true)))
+
+; ### clean trials #######################################
+
 
 
 (defn execute [params] 
@@ -104,7 +140,7 @@
           (swap! params-atom (fn [params] 
                                (conj params 
                                      {:state "failed", 
-                                      :finished-at (util/now-as-iso8601)
+                                      :finished-at (time/now)
                                       :error  (with-out-str (stacktrace/print-stack-trace e))} )))
           (logging/error  (str @params-atom (with-out-str (stacktrace/print-stack-trace e))))
           ((create-update-sender-via-agent report-agent) @params-atom))))))

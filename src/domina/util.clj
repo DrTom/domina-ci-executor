@@ -11,6 +11,7 @@
     [clj-time.format :as time-format]
     [clojure.pprint :as pprint]
     [clojure.string :as string]
+    [clojure.stacktrace :as stacktrace]
     [clojure.tools.logging :as logging]
     )
   (:use 
@@ -18,6 +19,17 @@
     ))
 
 ;(set-logger! :level :debug)
+
+(defn filter-trace [tr regex]
+  (concat [(with-out-str (stacktrace/print-throwable tr))]
+          (filter (fn [l] (re-matches regex l))
+                  (map (fn [e] (with-out-str (stacktrace/print-trace-element e)))
+                       (.getStackTrace tr)
+                       ))))
+
+
+(defn application-trace [tr]
+  (filter-trace tr #".*domina.*"))
 
 
 (defn uuid-to-short [uuid]
