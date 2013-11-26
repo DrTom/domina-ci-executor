@@ -10,6 +10,7 @@
     [clojure.data.json :as json]
     [clojure.string :as string]
     [clojure.tools.logging :as logging]
+    [domina.json]
     ))
 
 ;(set-logger! :level :debug)
