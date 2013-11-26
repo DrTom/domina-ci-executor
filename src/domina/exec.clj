@@ -19,21 +19,16 @@
     [clojure.stacktrace :only (print-stack-trace)]
     ))
 
-;(set-logger! :level :debug)
+(set-logger! :level :debug)
 
-(def defaul-system-interpreter
+(def ^:private defaul-system-interpreter
   (condp = (clojure.string/lower-case (System/getProperty "os.name"))
     "windows" ["cmd.exe" "/c"]
     ["bash" "-c"]))
 
 ; TODO FIXME even though this times out; it seems that the process is not killed
-(defn exec-script 
-  [script & {:keys [timeout working-dir env-variables interpreter] 
-             :or {env-variables {}, 
-                  timeout 200
-                  interpreter defaul-system-interpreter
-                  working-dir (System/getProperty "user.home")
-                  }}]
+(defn ^:private exec-script 
+  [script & {:keys [timeout working-dir env-variables interpreter]}]
   "Runs the script in the (default) interpreter by passing the full path as the
   last argument. Returns a map with the keys :process (value can be nil) and
   :thread immediatelly.  
@@ -43,9 +38,11 @@
   to [\"cmd.exe\" \"/c\"] in windows and [\"bash\" \"-l\"] in unixes.
   * env-variables, a hash of env variables  {:LEVEL \"DEBUG\"}, defaults to {}
   * working-dir, defaults to the home directory of the user." 
-
-  (logging/info (str "exec-script" (reduce (fn [s x] (str s " # " x)) [script timeout interpreter working-dir])))
-  (let [ script-file (File/createTempFile "domina_", ".script") ]
+  (let [timeout (or timeout 200)
+        script-file (File/createTempFile "domina_", ".script") 
+        env-variables (or env-variables {})
+        interpreter (or interpreter defaul-system-interpreter)]
+    (logging/info (str "exec-script" (reduce (fn [s x] (str s " # " x)) [script timeout env-variables interpreter working-dir])))
     (.deleteOnExit script-file)
     (spit script-file script)
     (.setExecutable script-file true)
@@ -64,7 +61,7 @@
       )))
 
 
-(defn prepare-env-variables [{ex-uuid :domina-execution-uuid trial-uuid :domina-trial-uuid :as params}]
+(defn ^:private prepare-env-variables [{ex-uuid :domina-execution-uuid trial-uuid :domina-trial-uuid :as params}]
   (logging/debug ":domina-execution-uuid " ex-uuid ":domina-trial-uuid " trial-uuid)
   (util/upper-case-keys 
     (util/rubyize-keys
@@ -72,17 +69,19 @@
                     :domina-execution-int (util/uuid-to-short ex-uuid)
                     }))))
 
-(defn exec-script-for-params [params]
+(defn ^:private exec-script-for-params [params]
   (logging/info (str "exec-script-for-params" (select-keys params [:name])))
   (try
-    (let [started {:started-at (util/date-time-to-iso8601 (time/now))}
+    (let [started {:started-at (time/now)}
           env-variables (prepare-env-variables (:env-vars params))
           working-dir (:working-dir params)
-          timeout (or (:timeout params) 200)
-          exec-res (exec-script (:body params) :working-dir working-dir :env-variables env-variables :timeout timeout)] 
+          exec-res (exec-script (:body params) 
+                                :working-dir working-dir 
+                                :env-variables env-variables 
+                                :timeout (:timeout params))] 
       (conj params 
             started 
-            {:finished-at (util/date-time-to-iso8601 (time/now))
+            {:finished-at (time/now)
              :exit-status (:exit exec-res)
              :state (condp = (:exit exec-res) 
                       0 "success" 
@@ -91,8 +90,7 @@
              :stderr (:err exec-res) 
              :error (:error exec-res)
              :interpreter-command (:intepreter exec-res)
-             }
-            ))
+             }))
     (catch Exception e
       (do
         (logging/error (with-out-str (print-stack-trace e)))
