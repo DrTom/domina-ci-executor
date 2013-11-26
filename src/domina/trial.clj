@@ -41,7 +41,8 @@
 
 (defonce ^:private ports-in-usage (atom #{}))
 
-(defonce ^:private trials-atom (atom {}))
+(def ;once 
+  ^:private trials-atom (atom {}))
 
 (defn ^:private create-trial   
   "Creates a new trial, stores it in trials under it's id and returns the
@@ -61,19 +62,20 @@
 
 (defn execute [params] 
   (logging/info execute params)
-  (let [ext-prarams (git/prepare-and-create-working-dir params)
-        trial (create-trial ext-prarams)      
+  (let [working-dir (git/prepare-and-create-working-dir params)
+        trial (create-trial (conj params {:working-dir working-dir}))
+        params-atom (:params-atom trial)
         report-agent (:report-agent trial)]
     (future 
       (try 
         (send-trial-patch report-agent params  {:started-at (util/now-as-iso8601)})
         (let [scripts (map (fn [script-params]
-                             (conj script-params (select-keys ext-prarams [:env-vars :domina-execution-uuid 
+                             (conj script-params (select-keys @params-atom [:env-vars :domina-execution-uuid 
                                                                            :domina-trial-uuid :working-dir ])))
                            (:scripts params))]
           (logging/debug (str "processing scripts " (reduce (fn [s x] (str s " # " x)) scripts)))
           (script/process scripts (create-update-sender-via-agent report-agent))
-          (attachments/put (:working-dir ext-prarams) (:attachments ext-prarams) (:attachments-url ext-prarams))
+          (attachments/put working-dir (:attachments @params-atom) (:attachments-url @params-atom))
           (send-trial-patch report-agent params  {:finished-at (util/now-as-iso8601)}))
         (catch Exception e
           (let [params (conj params {:state "failed", 

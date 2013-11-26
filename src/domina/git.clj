@@ -106,8 +106,7 @@
         working-dir (str (:working-dir @shared/conf) (File/separator) (:uuid params)) ]
     (clone-to-working-dir repository-path (:git-commit-id params) working-dir)
     (logging/debug "WORKING-DIR " working-dir)
-    (conj params {:working-dir working-dir})
-    ))
+    working-dir))
 
 
 ; FOR PROTOTYPING
