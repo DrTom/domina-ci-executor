@@ -24,7 +24,7 @@
 (def ^:private defaul-system-interpreter
   (condp = (clojure.string/lower-case (System/getProperty "os.name"))
     "windows" ["cmd.exe" "/c"]
-    ["bash" "-c"]))
+    ["bash" "-l"]))
 
 ; TODO FIXME even though this times out; it seems that the process is not killed
 (defn ^:private exec-script 
@@ -47,7 +47,7 @@
     (spit script-file script)
     (.setExecutable script-file true)
     (let 
-      [command (conj interpreter (str "bash -l " (.getAbsolutePath script-file)))
+      [command (conj interpreter (.getAbsolutePath script-file))
        extended-env-variables  (conj {} (System/getenv) env-variables) 
        command-with-options (conj command :env extended-env-variables :dir working-dir)
        res (future-call #(apply shell/sh command-with-options)) 
