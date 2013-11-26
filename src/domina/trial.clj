@@ -42,11 +42,19 @@
 
 (defonce ^:private ports-in-usage (atom #{}))
 
-(def ;once 
-  ^:private trials-atom (atom {}))
+(defonce ^:private trials-atom (atom {}))
+
 
 ;(clojure.pprint/pprint trials-atom)
 
+(defn- prepare-scripts [params]
+  (map (fn [script-params]
+         (atom (conj script-params 
+                     (select-keys params
+                                  [:env-vars :domina-execution-uuid 
+                                   :domina-trial-uuid :working-dir ]))))
+       (:scripts params)))
+ 
 (defn ^:private create-trial   
   "Creates a new trial, stores it in trials under it's id and returns the
   trial"
@@ -55,9 +63,25 @@
     (swap! trials-atom 
            (fn [trials params id]
              (conj trials {id {:params-atom (atom params)
+                               :scripts (prepare-scripts params)
                                :report-agent (agent [] :error-mode :continue)}}))
            params id)
     (@trials-atom id)))
+
+(defn- set-and-send-start-params [params-atom report-agent]
+  (let [start-params {:started-at (time/now) :state "executing"}]
+    (swap! params-atom 
+           (fn [params start-params] (conj params start-params)) 
+           start-params)
+    (send-trial-patch report-agent @params-atom start-params)))
+
+(defn- set-and-send-finished-params [params-atom report-agent]
+  (let [finished-params {:finished-at (time/now)}]
+    (swap! params-atom 
+           (fn [params finished-params] (conj params finished-params)) 
+           finished-params)
+    (send-trial-patch report-agent @params-atom finished-params)))
+
 
 (defn execute [params] 
   (logging/info execute params)
@@ -67,23 +91,14 @@
         report-agent (:report-agent trial)]
     (future 
       (try 
-        (let [start-params {:started-at (time/now) :state "executing"}]
-          (swap! params-atom (fn [params] (conj params start-params)))
-          (send-trial-patch report-agent @params-atom start-params))
 
-        (let [scripts (map (fn [script-params]
-                             (conj script-params 
-                                   (select-keys @params-atom 
-                                                [:env-vars :domina-execution-uuid 
-                                                 :domina-trial-uuid :working-dir ])))
-                           (:scripts @params-atom))]
-          (logging/debug (str "processing scripts " (reduce (fn [s x] (str s " # " x)) scripts)))
-          (script/process scripts (create-update-sender-via-agent report-agent))
-          (attachments/put working-dir (:attachments @params-atom) (:attachments-url @params-atom)))
+        (set-and-send-start-params params-atom report-agent)
 
-        (let [finished-params {:finished-at (time/now)}]
-          (swap! params-atom (fn [params] (conj params finished-params)))
-          (send-trial-patch report-agent @params-atom finished-params))
+        (script/process (:scripts trial) (create-update-sender-via-agent report-agent))
+
+        (future (attachments/put working-dir (:attachments @params-atom) (:attachments-url @params-atom)))
+
+        (set-and-send-finished-params params-atom report-agent)
 
         (catch Exception e
           (swap! params-atom (fn [params] 
@@ -93,5 +108,4 @@
                                       :error  (with-out-str (stacktrace/print-stack-trace e))} )))
           (logging/error  (str @params-atom (with-out-str (stacktrace/print-stack-trace e))))
           ((create-update-sender-via-agent report-agent) @params-atom))))))
-
 

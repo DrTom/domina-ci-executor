@@ -56,10 +56,10 @@
 (defn process [scripts process-result] 
   (logging/info (str "processing scripts: " scripts))
 
-  (loop [scripts scripts has-failures false]
-    (if-let [script (first scripts)]
-
-      (do 
+  (loop [scripts scripts 
+         has-failures false]
+    (when-let [script-atom (first scripts)] 
+      (let [script @script-atom]
         (logging/debug "processing script: "  script)
         (logging/debug "dispatching on the script type "  (:type script))
 
@@ -90,6 +90,7 @@
                                    )}))]
 
           (logging/debug "executed script: " script " with result: " script-exec-result)
+          (swap! script-atom (fn [script script-exec-result] (conj script script-exec-result)) script-exec-result)
           (process-result script-exec-result)
           (recur (rest scripts) 
                  (or has-failures  (not= "success" (:state script-exec-result)))))))))

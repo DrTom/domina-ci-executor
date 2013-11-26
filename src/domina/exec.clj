@@ -56,7 +56,7 @@
                     :domina-execution-int (util/uuid-to-short ex-uuid)
                     }))))
 
-(defn ^:private exec-script-for-params [params]
+(defn exec-script-for-params [params]
   (logging/info (str "exec-script-for-params" (select-keys params [:name])))
   (try
     (let [started {:started-at (time/now)}
@@ -85,6 +85,3 @@
               {:state "failed"
                :error (with-out-str (print-stack-trace e))
                })))))
-
-
-
