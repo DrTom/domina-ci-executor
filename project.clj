@@ -12,6 +12,7 @@
                  [me.raynes/fs "1.4.4"]
                  [org.bouncycastle/bcpkix-jdk15on "1.48"]
                  [org.bouncycastle/bcprov-jdk15on "1.48"]
+                 [org.clojars.hozumi/clj-commons-exec "1.0.6"]
                  [org.clojure/clojure "1.5.1"]
                  [org.clojure/data.json "0.2.2"]
                  [org.clojure/tools.logging "0.2.6"]

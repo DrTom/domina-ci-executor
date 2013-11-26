@@ -8,6 +8,7 @@
     [java.util UUID]
     )
   (:require
+    [clj-commons-exec :as commons-exec]
     [clj-time.core :as time]
     [clojure.string :as string]
     [clojure.tools.logging :as logging]
@@ -26,18 +27,10 @@
     "windows" ["cmd.exe" "/c"]
     ["bash" "-l"]))
 
-; TODO FIXME even though this times out; it seems that the process is not killed
 (defn ^:private exec-script 
   [script & {:keys [timeout working-dir env-variables interpreter]}]
   "Runs the script in the (default) interpreter by passing the full path as the
-  last argument. Returns a map with the keys :process (value can be nil) and
-  :thread immediatelly.  
-
-  Named options are: 
-  * interpreter, an array of the command and arguments, defaults 
-  to [\"cmd.exe\" \"/c\"] in windows and [\"bash\" \"-l\"] in unixes.
-  * env-variables, a hash of env variables  {:LEVEL \"DEBUG\"}, defaults to {}
-  * working-dir, defaults to the home directory of the user." 
+  last argument. Blocks until the script exits or times out."
   (let [timeout (or timeout 200)
         script-file (File/createTempFile "domina_", ".script") 
         env-variables (or env-variables {})
@@ -48,17 +41,11 @@
     (.setExecutable script-file true)
     (let 
       [command (conj interpreter (.getAbsolutePath script-file))
-       extended-env-variables  (conj {} (System/getenv) env-variables) 
-       command-with-options (conj command :env extended-env-variables :dir working-dir)
-       res (future-call #(apply shell/sh command-with-options)) 
-       timeout-ms (* 1000 timeout) 
-       ret-val (deref res timeout-ms {:exit -1 :out nil :err nil :error "timeout"})
-       extended-ret-val (conj ret-val {:interpreter-command command})
-       ]
-      (logging/debug (str "extended-env-variables " extended-env-variables))
-      (logging/debug (str "exec-script returns: " extended-ret-val))
-      extended-ret-val
-      )))
+       res (deref (commons-exec/sh command 
+                                   {:env env-variables 
+                                    :dir working-dir  
+                                    :watchdog (* 1000 timeout)}))]
+      res)))
 
 
 (defn ^:private prepare-env-variables [{ex-uuid :domina-execution-uuid trial-uuid :domina-trial-uuid :as params}]
