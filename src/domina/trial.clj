@@ -7,6 +7,7 @@
     [java.io File ]
     )
   (:require
+    [clj-commons-exec :as commons-exec]
     [clj-time.core :as time]
     [clojure.pprint :as pprint]
     [clojure.stacktrace :as stacktrace]
@@ -72,7 +73,7 @@
 (defonce ^:private trials-atom (atom {}))
 
 ;(clojure.pprint/pprint trials-atom)
-;
+ 
 (defn- create-trial   
   "Creates a new trial, stores it in trials under it's id and returns the
   trial"
@@ -81,6 +82,7 @@
     (swap! trials-atom 
            (fn [trials params id]
              (conj trials {id {:params-atom (atom params)
+                               :working-dir (:working-dir params)
                                :scripts (prepare-scripts params)
                                :report-agent (agent [] :error-mode :continue)}}))
            params id)
@@ -88,36 +90,46 @@
 
 (defn- delete-trial [id trial]
   (logging/debug "deleting trial " id)
-  (swap! trials-atom (fn [trials id] #(dissoc %1 %2) id)))
+  (when (= 0 (:exit @(commons-exec/sh ["rm" "-rf" (:working-dir trial)])))
+    (swap! trials-atom #(dissoc %1 %2) id)))
 
+; ### BEGIN clean trials #######################################
 
-; ### clean trials #######################################
-
-(def ;once 
-  ^:private trials-cleaner-stopped (atom false))
+(defonce ^:private trials-cleaner-stopped (atom false))
 
 (defn start-trials-cleaner []
   (logging/info "started trials cleaner")
   (swap! trials-cleaner-stopped (fn [_] false)) 
   (future
     (loop [] 
-      (with/logging-and-swallow
-        (doseq [[id trial] @trials-atom] 
+      (doseq [[id trial] @trials-atom] 
+        (logging/debug "deleting? " id trial)
+        (with/logging-and-swallow
           (let [params @(:params-atom trial) 
                 timestamp (or (:finished-at params) (:started-at params))]
-            (when (> (time/in-minutes (time/interval timestamp (time/now))) 1); TODO increase
+            (when (> (time/in-minutes (time/interval timestamp (time/now))) 150)
               (delete-trial id trial)))))
       (Thread/sleep (* 60 1000))
       (if-not @trials-cleaner-stopped 
         (recur)
         (logging/info "stopped trials cleaner")))))
 
+(defn clean-all []
+  (doseq [[id trial] @trials-atom] 
+    (logging/debug "deleting? " id trial)
+    (with/logging-and-swallow
+      (delete-trial id trial))))
+  
 (defn stop-trials-cleaner []
   (swap! trials-cleaner-stopped (fn [_] true)))
 
-; ### clean trials #######################################
+; ### END clean trials #######################################
 
-
+(defn initialize []
+  (.addShutdownHook 
+    (Runtime/getRuntime)
+    (Thread. (fn [] (clean-all))))
+  (start-trials-cleaner))
 
 (defn execute [params] 
   (logging/info execute params)
