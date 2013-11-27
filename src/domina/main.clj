@@ -9,9 +9,10 @@
     )
   (:require 
     [clojure.tools.logging :as logging]
+    [domina.nrepl :as nrepl]
     [domina.reporter :as reporter]
     [domina.shared :as shared]
-    [domina.nrepl :as nrepl]
+    [domina.trial :as trial]
     [domina.util :as util]
     [domina.web :as web]
     )
@@ -38,6 +39,7 @@
   (logging/info "starting -main " args)
   (read-config)
   (shared/initialize)
+  (trial/initialize)
   (nrepl/start-server)
   (web/start-server))
 
