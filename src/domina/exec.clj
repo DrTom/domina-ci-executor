@@ -20,7 +20,12 @@
     [clojure.stacktrace :only (print-stack-trace)]
     ))
 
-(set-logger! :level :debug)
+;(set-logger! :level :debug)
+;(clojure.pprint/pprint @(commons-exec/sh ["bash" "-l" "-c" "load_rbenv && rbenv shell ruby-2.0.0 && ruby -v"] {:env (System/getenv) }))
+;(clojure.pprint/pprint @(commons-exec/sh ["sh" "-l" "-c" "bash -l -c \"env |sort\""] {:env {}}))
+;(shell/sh "bash" "-l" "-c" "env" :env {})
+
+
 
 (def ^:private defaul-system-interpreter
   (condp = (clojure.string/lower-case (System/getProperty "os.name"))
@@ -42,7 +47,7 @@
     (let 
       [command (conj interpreter (.getAbsolutePath script-file))
        res (deref (commons-exec/sh command 
-                                   {:env env-variables 
+                                   {:env (conj {} (System/getenv) env-variables)
                                     :dir working-dir  
                                     :watchdog (* 1000 timeout)}))]
       res)))
