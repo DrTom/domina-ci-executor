@@ -3,3 +3,5 @@
 ; See the "LICENSE.txt" file provided with this software.
 
 (ns domina.scratch)
+
+;(into {} (map (fn [[x y]] [x y] ) {:a "x" :b 7}))

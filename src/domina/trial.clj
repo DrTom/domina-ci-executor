@@ -16,6 +16,7 @@
     [domina.exec :as exec]
     [domina.git :as git]
     [domina.reporter :as reporter]
+    [domina.port-provider :as port-provider]
     [domina.script :as script]
     [domina.util :as util]
     [domina.with :as with]
@@ -44,31 +45,18 @@
 
 
 (defn- set-and-send-start-params [params-atom report-agent]
-  (let [start-params {:started-at (time/now) :state "executing"}]
-    (swap! params-atom 
-           (fn [params start-params] (conj params start-params)) 
-           start-params)
-    (send-trial-patch report-agent @params-atom start-params)))
-
-(defn- set-and-send-finished-params [params-atom report-agent]
-  (let [finished-params {:finished-at (time/now)}]
-    (swap! params-atom 
-           (fn [params finished-params] (conj params finished-params)) 
-           finished-params)
-    (send-trial-patch report-agent @params-atom finished-params)))
-
+  (swap! params-atom (fn [params] (conj params {:state "executing"}))) 
+  (send-trial-patch report-agent @params-atom (select-keys @params-atom [:state :started-at])))
 
 (defn- prepare-scripts [params]
   (map (fn [script-params]
          (atom (conj script-params 
                      (select-keys params
-                                  [:env-vars :domina-execution-uuid 
+                                  [:environment-variables :domina-execution-uuid 
                                    :domina-trial-uuid :working-dir ]))))
        (:scripts params)))
 
 
-
-(defonce ^:private ports-in-usage (atom #{}))
 
 (defonce ^:private trials-atom (atom {}))
 
@@ -78,12 +66,13 @@
   "Creates a new trial, stores it in trials under it's id and returns the
   trial"
   [params]
-  (let [id (:domina-trial-uuid params)]
+  (let [id (:domina-trial-uuid params)
+        
+        ]
     (swap! trials-atom 
            (fn [trials params id]
-             (conj trials {id {:params-atom (atom params)
+             (conj trials {id {:params-atom (atom (conj params {:scripts (prepare-scripts params)}))
                                :working-dir (:working-dir params)
-                               :scripts (prepare-scripts params)
                                :report-agent (agent [] :error-mode :continue)}}))
            params id)
     (@trials-atom id)))
@@ -133,20 +122,38 @@
 
 (defn execute [params] 
   (logging/info execute params)
-  (let [working-dir (git/prepare-and-create-working-dir params)
-        trial (create-trial (conj params {:working-dir working-dir}))
+  (let [started-at (time/now)
+        working-dir (git/prepare-and-create-working-dir params)
+        trial (create-trial (conj params {:working-dir working-dir :started-at started-at}))
         params-atom (:params-atom trial)
-        report-agent (:report-agent trial)]
+        scripts-atoms (:scripts @params-atom)
+        report-agent (:report-agent trial)
+        ports (into {} (map (fn [[port-name port-params]] 
+                              [port-name (port-provider/occupy-port 
+                                           (or (:inet-address port-params) "localhost") 
+                                           (:min port-params) 
+                                           (:max port-params))])
+                            (:ports @params-atom)))]
     (future 
       (try 
-
         (set-and-send-start-params params-atom report-agent)
 
-        (script/process (:scripts trial) (create-update-sender-via-agent report-agent))
+
+        ; inject the ports into the scripts
+        (doseq [script-atom scripts-atoms]
+          (swap! script-atom #(conj %1 {:ports %2}) ports))
+
+
+        (script/process scripts-atoms  nil)
+
+        (let [final-state (if (every?  (fn [script-atom] (= "success" (:state @script-atom))) scripts-atoms)
+                            "success"
+                            "failed")]
+          (swap! params-atom #(conj %1 {:state %2, :finished-at (time/now)}) final-state)
+          ((create-update-sender-via-agent report-agent) @params-atom))
 
         (future (attachments/put working-dir (:attachments @params-atom) (:attachments-url @params-atom)))
 
-        (set-and-send-finished-params params-atom report-agent)
 
         (catch Exception e
           (swap! params-atom (fn [params] 
@@ -155,5 +162,9 @@
                                       :finished-at (time/now)
                                       :error  (with-out-str (stacktrace/print-stack-trace e))} )))
           (logging/error  (str @params-atom (with-out-str (stacktrace/print-stack-trace e))))
-          ((create-update-sender-via-agent report-agent) @params-atom))))))
+          ((create-update-sender-via-agent report-agent) @params-atom))
+
+        (finally 
+          (doseq [[_ port] ports]
+            (port-provider/release-port port)))))))
 

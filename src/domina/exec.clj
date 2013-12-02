@@ -50,7 +50,7 @@
                                    {:env (conj {} (System/getenv) env-variables)
                                     :dir working-dir  
                                     :watchdog (* 1000 timeout)}))]
-      res)))
+      (conj res {:interpreter interpreter}))))
 
 
 (defn ^:private prepare-env-variables [{ex-uuid :domina-execution-uuid trial-uuid :domina-trial-uuid :as params}]
@@ -65,12 +65,13 @@
   (logging/info (str "exec-script-for-params" (select-keys params [:name])))
   (try
     (let [started {:started-at (time/now)}
-          env-variables (prepare-env-variables (:env-vars params))
+          env-variables (prepare-env-variables (conj (:ports params) (:environment-variables params)))
           working-dir (:working-dir params)
           exec-res (exec-script (:body params) 
                                 :working-dir working-dir 
                                 :env-variables env-variables 
-                                :timeout (:timeout params))] 
+                                :timeout (:timeout params)
+                                :interpreter (:interpreter params))] 
       (conj params 
             started 
             {:finished-at (time/now)
@@ -81,7 +82,7 @@
              :stdout (:out exec-res)
              :stderr (:err exec-res) 
              :error (:error exec-res)
-             :interpreter-command (:intepreter exec-res)
+             :interpreter (:interpreter exec-res)
              }))
     (catch Exception e
       (do

@@ -91,7 +91,7 @@
 
           (logging/debug "executed script: " script " with result: " script-exec-result)
           (swap! script-atom (fn [script script-exec-result] (conj script script-exec-result)) script-exec-result)
-          (process-result script-exec-result)
+          (when process-result (process-result script-exec-result))
           (recur (rest scripts) 
                  (or has-failures  (not= "success" (:state script-exec-result)))))))))
 
