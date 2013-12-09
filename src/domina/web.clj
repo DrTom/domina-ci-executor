@@ -5,7 +5,6 @@
 (ns domina.web
   (:use 
     [clj-logging-config.log4j :only (set-logger!)]
-    [clojure.stacktrace :only (print-stack-trace)]
     )
   (:require 
     [clj-time.core :as time]
@@ -36,8 +35,12 @@
 (defn execute [request]
   (logging/info (str "received execution request: " request))
   (try 
-    (trial/execute (clojure.walk/keywordize-keys (:json-params request)))
-    {:status 204}
+    (let [trial-parameters  (clojure.walk/keywordize-keys (:json-params request))]
+      (logging/debug "trial-parameters" trial-parameters)
+      (when-not (:domina-trial-uuid trial-parameters) (throw (IllegalStateException. ":id parameter must be present")))
+      (when-not (:patch-url trial-parameters) (throw (IllegalStateException. ":patch-url parameter must be present")))
+      (future (trial/execute trial-parameters))
+      {:status 204})
     (catch Exception e
       (logging/error request (with-out-str (stacktrace/print-stack-trace e)))
       {:status 422 :body (str e)})))
