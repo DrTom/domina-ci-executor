@@ -24,4 +24,6 @@
                  ]
   :aot [domina.main]
   :main domina.main 
-  )
+  :plugins [[lein-midje "3.0.0"]]
+  :profiles {:dev {:dependencies [[midje "1.5.1"]]}}
+)

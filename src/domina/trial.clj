@@ -29,7 +29,7 @@
 
 (defn create-update-sender-via-agent [report-agent]
   (fn [params]
-    (let [url (:patch-url params)
+    (let [url (:patch_url params)
           fun (fn[agent-state]
                 (let [res (reporter/put-as-json-with-retries url params)]
                   (conj agent-state params)))]
@@ -40,23 +40,23 @@
   "Sends just the patch-params" 
   [report-agent params patch-params]
   ((create-update-sender-via-agent report-agent) 
-   (conj (select-keys params [:patch-url])
+   (conj (select-keys params [:patch_url])
          patch-params)))
 
 
 (defn- set-and-send-start-params [params-atom report-agent]
   (swap! params-atom (fn [params] (conj params {:state "executing"}))) 
-  (send-trial-patch report-agent @params-atom (select-keys @params-atom [:state :started-at])))
+  (send-trial-patch report-agent @params-atom (select-keys @params-atom [:state :started_at])))
 
 (defn- prepare-and-insert-scripts [params-atom]
   (let [initial-scripts (:scripts @params-atom)
         script-atoms (map (fn [script-params]
                             (atom (conj script-params 
                                         (select-keys @params-atom
-                                                     [:environment-variables 
-                                                      :domina-execution-uuid 
-                                                      :domina-trial-uuid 
-                                                      :working-dir ]))))
+                                                     [:environment_variables 
+                                                      :domina_execution_uuid 
+                                                      :domina_trial_uuid 
+                                                      :working_dir ]))))
                           initial-scripts)]
     (swap! params-atom #(conj %1 {:scripts %2}) script-atoms)
     script-atoms))
@@ -71,7 +71,7 @@
   "Creates a new trial, stores it in trials under it's id and returns the
   trial"
   [params]
-  (let [id (:domina-trial-uuid params)]
+  (let [id (:domina_trial_uuid params)]
     (swap! trials-atom 
            (fn [trials params id]
              (conj trials {id {:params-atom (atom  params)
@@ -81,7 +81,7 @@
 
 (defn- delete-trial [id trial]
   (logging/debug "deleting trial " id)
-  (when (= 0 (:exit @(commons-exec/sh ["rm" "-rf" (:working-dir trial)])))
+  (when (= 0 (:exit @(commons-exec/sh ["rm" "-rf" (:working_dir trial)])))
     (swap! trials-atom #(dissoc %1 %2) id)))
 
 ; ### BEGIN clean trials #######################################
@@ -97,7 +97,7 @@
         (logging/debug "deleting? " id trial)
         (with/logging-and-swallow
           (let [params @(:params-atom trial) 
-                timestamp (or (:finished-at params) (:started-at params))]
+                timestamp (or (:finished_at params) (:started_at params))]
             (when (> (time/in-minutes (time/interval timestamp (time/now))) 150)
               (delete-trial id trial)))))
       (Thread/sleep (* 60 1000))
@@ -122,20 +122,27 @@
     (Thread. (fn [] (clean-all))))
   (start-trials-cleaner))
 
+
+(defn validate-execute-params [params]
+  (assert (not= (:domina_trial_uuid params) nil))
+  (assert (not (clojure.string/blank? (:domina_trial_uuid params))) 
+          ))
+
 (defn execute [params] 
+  (validate-execute-params params)
   (logging/info execute params)
   (let [started-at (time/now)
-        trial (create-trial (conj params {:started-at started-at}))
+        trial (create-trial (conj params {:started_at started-at}))
         report-agent (:report-agent trial)
         params-atom (:params-atom trial)]
     (try 
       (let [
             working-dir (git/prepare-and-create-working-dir params)
-            _ (swap! params-atom #(conj %1 {:working-dir %2}) working-dir) 
+            _ (swap! params-atom #(conj %1 {:working_dir %2}) working-dir) 
             scripts-atoms (prepare-and-insert-scripts  params-atom)
             ports (into {} (map (fn [[port-name port-params]] 
                                   [port-name (port-provider/occupy-port 
-                                               (or (:inet-address port-params) "localhost") 
+                                               (or (:inet_address port-params) "localhost") 
                                                (:min port-params) 
                                                (:max port-params))])
                                 (:ports @params-atom)))]
@@ -154,25 +161,28 @@
                                         scripts-atoms) "success" "failed")]
 
             (swap! params-atom 
-                   #(conj %1 {:state %2, :finished-at (time/now)}) 
+                   #(conj %1 {:state %2, :finished_at (time/now)}) 
                    final-state)
 
             ((create-update-sender-via-agent report-agent) @params-atom))
 
           (future (attachments/put working-dir 
                                    (:attachments @params-atom) 
-                                   (:attachments-url @params-atom)))
+                                   (:attachments_url @params-atom)))
 
           (finally 
             (doseq [[_ port] ports]
-              (port-provider/release-port port)))))
+              (port-provider/release-port port))
+            trial)))
 
       (catch Exception e
         (swap! params-atom (fn [params] 
                              (conj params 
                                    {:state "failed", 
-                                    :finished-at (time/now)
+                                    :finished_at (time/now)
                                     :error  (with-out-str (stacktrace/print-stack-trace e))})))
         (logging/error  (str @params-atom (with-out-str (stacktrace/print-stack-trace e))))
-        ((create-update-sender-via-agent report-agent) @params-atom)))))
+        ((create-update-sender-via-agent report-agent) @params-atom))
+      (finally trial))
+    trial))
 

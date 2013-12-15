@@ -32,7 +32,7 @@
     "windows" ["cmd.exe" "/c"]
     ["bash" "-l"]))
 
-(defn ^:private exec-script 
+(defn exec-script 
   [script & {:keys [timeout working-dir env-variables interpreter]}]
   "Runs the script in the (default) interpreter by passing the full path as the
   last argument. Blocks until the script exits or times out."
@@ -53,29 +53,29 @@
       (conj res {:interpreter interpreter}))))
 
 
-(defn ^:private prepare-env-variables [{ex-uuid :domina-execution-uuid trial-uuid :domina-trial-uuid :as params}]
-  (logging/debug ":domina-execution-uuid " ex-uuid ":domina-trial-uuid " trial-uuid)
+(defn ^:private prepare-env-variables [{ex-uuid :domina_execution_uuid trial-uuid :domina_trial_uuid :as params}]
+  (logging/debug ":domina_execution_uuid " ex-uuid ":domina_trial_uuid " trial-uuid)
   (util/upper-case-keys 
     (util/rubyize-keys
-      (conj params {:domina-trial-int (util/uuid-to-short trial-uuid)
-                    :domina-execution-int (util/uuid-to-short ex-uuid)
+      (conj params {:domina_trial_int (util/uuid-to-short trial-uuid)
+                    :domina_execution_int (util/uuid-to-short ex-uuid)
                     }))))
 
 (defn exec-script-for-params [params]
   (logging/info (str "exec-script-for-params" (select-keys params [:name])))
   (try
-    (let [started {:started-at (time/now)}
-          env-variables (prepare-env-variables (conj (:ports params) (:environment-variables params)))
-          working-dir (:working-dir params)
+    (let [started {:started_at (time/now)}
+          env-variables (prepare-env-variables (conj (or (:ports params) {}) (:environment_variables params)))
+          working-dir (:working_dir params)
           exec-res (exec-script (:body params) 
-                                :working-dir working-dir 
-                                :env-variables env-variables 
+                                :working_dir working-dir 
+                                :env_variables env-variables 
                                 :timeout (:timeout params)
                                 :interpreter (:interpreter params))] 
       (conj params 
             started 
-            {:finished-at (time/now)
-             :exit-status (:exit exec-res)
+            {:finished_at (time/now)
+             :exit_status (:exit exec-res)
              :state (condp = (:exit exec-res) 
                       0 "success" 
                       "failed")

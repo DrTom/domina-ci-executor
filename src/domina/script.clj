@@ -41,12 +41,12 @@
         (conj agent-state 
               {(:name script) 
                (select-keys script-exec-result
-                            [:stderr :stdout :error :exit-status
-                             :state :interpreter-command 
-                             :started-at :finished-at])})))))
+                            [:stderr :stdout :error :exit_status
+                             :state :interpreter
+                             :started_at :finished_at])})))))
 
 (defn memoized-executor-exec [script]
-  (let [my-agent (script-exec-agent (:domina-execution-uuid script))]
+  (let [my-agent (script-exec-agent (:domina_execution_uuid script))]
     (send-off my-agent use-memoized-or-execute script)
     (await my-agent)
     (@my-agent (:name script))))

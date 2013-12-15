@@ -46,23 +46,22 @@
   (testing "prepare-and-create-working-dir"
     (config-setup!)
     (unpack-test-repo!)
-    (let [new-params (prepare-and-create-working-dir {:git-url (:test-repo-path @shared/conf) 
-                                                      :git-repository-id  "test_repo"
-                                                      :git-commit-id "e4e1e98473b51b5539a16741da717f4e2ae33965"
-                                                      :uuid (str (java.util.UUID/randomUUID)) }) ]
+    (let [working-dir (prepare-and-create-working-dir {:git_url (:test-repo-path @shared/conf) 
+                                                      :repository_id  "test_repo"
+                                                      :git_commit_id "e4e1e98473b51b5539a16741da717f4e2ae33965"
+                                                      :domina_trial_uuid (str (java.util.UUID/randomUUID)) 
+                                                      })]
       (testing "it clones the test_repo"
         (let [res (shell/sh "git" "log" "-n" "1" "--format='%H'" "e4e1e98473b51b5539a16741da717f4e2ae33965" 
                             :dir (:test-repo-path @shared/conf))]
           (is (= 0 (:exit res)))))
 
-      (testing "it includes a :working-dir key in the result params"
-        (is (not= nil (:working-dir new-params))))
 
       (testing "the working dir is checked out git repo with a commit present"
         (let [res (shell/sh "git" "log" "-n" "1" "--format='%H'" "e4e1e98473b51b5539a16741da717f4e2ae33965" 
-                            :dir (:working-dir new-params))]
+                            :dir working-dir)]
           (is (= 0 (:exit res))))
-        (is (= true (.exists (File.  (str (:working-dir new-params)  (File/separator) "README.mdk"))))) )
+        (is (= true (.exists (File.  (str working-dir (File/separator) "README.mdk"))))) )
       )))
 
 

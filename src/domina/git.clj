@@ -17,6 +17,7 @@
     [clj-logging-config.log4j :only (set-logger!)]
     ))
 
+;(set-logger! :level :debug)
 ;(set-logger! :level :info)
 
 (defn canonical-repository-path [prepository-id]
@@ -54,11 +55,13 @@
 
 (defn create-repository-agent [repository-url repository-id]
   (swap! repositories (fn [repositories repository-url repository-id ]
-                        (conj repositories {repository-id (agent {:commit-ids #{} 
-                                                                  :repository-id repository-id
-                                                                  :repository-url repository-url
-                                                                  :repository-path (canonical-repository-path repository-id) } 
-                                                                 :error-mode :continue)})
+                        (conj repositories 
+                              {repository-id 
+                               (agent {:commit-ids #{} 
+                                       :repository-id repository-id
+                                       :repository-url repository-url
+                                       :repository-path (canonical-repository-path repository-id) } 
+                                      :error-mode :continue)})
                         )repository-url repository-id)
   (repository-agent repository-id))
 
@@ -100,13 +103,16 @@
         true))))
 
 (defn prepare-and-create-working-dir [params]
-  (logging/debug "prepare-and-create-working-dir" str params)
-  (let [repository-path (serialized-initialize-or-update-if-required 
-                          (:git-url params) (:git-repository-id params) (:git-commit-id params))
-        working-dir (str (:working-dir @shared/conf) (File/separator) (:uuid params)) ]
-    (clone-to-working-dir repository-path (:git-commit-id params) working-dir)
-    (logging/debug "WORKING-DIR " working-dir)
-    working-dir))
+  (logging/debug "prepare-and-create-working-dir" params)
+  (let [working-dir-id (:domina_trial_uuid params)]
+    (when-not (and working-dir-id (not (clojure.string/blank? working-dir-id)))
+      (throw (java.lang.IllegalArgumentException. "invalid arguments of prepare-and-create-working-dir" )))
+    (let [repository-path (serialized-initialize-or-update-if-required 
+                            (:git_url params) (:repository_id params) (:git_commit_id params))
+          working-dir (str (:working-dir @shared/conf) (File/separator) working-dir-id) ]
+      (clone-to-working-dir repository-path (:git_commit_id params) working-dir)
+      (logging/debug "WORKING-DIR " working-dir)
+      working-dir)))
 
 
 ; FOR PROTOTYPING
