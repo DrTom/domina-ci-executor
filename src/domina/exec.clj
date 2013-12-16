@@ -41,6 +41,7 @@
         env-variables (or env-variables {})
         interpreter (or interpreter defaul-system-interpreter)]
     (logging/info (str "exec-script" (reduce (fn [s x] (str s " # " x)) [script timeout env-variables interpreter working-dir])))
+    (logging/debug "exec-script env-variables: " env-variables)
     (.deleteOnExit script-file)
     (spit script-file script)
     (.setExecutable script-file true)
@@ -54,22 +55,25 @@
 
 
 (defn ^:private prepare-env-variables [{ex-uuid :domina_execution_uuid trial-uuid :domina_trial_uuid :as params}]
-  (logging/debug ":domina_execution_uuid " ex-uuid ":domina_trial_uuid " trial-uuid)
-  (util/upper-case-keys 
-    (util/rubyize-keys
-      (conj params {:domina_trial_int (util/uuid-to-short trial-uuid)
-                    :domina_execution_int (util/uuid-to-short ex-uuid)
-                    }))))
+  (logging/debug "prepare-env-variables :domina_execution_uuid " ex-uuid ":domina_trial_uuid " trial-uuid " params: " params)
+  (let [res (util/upper-case-keys 
+              (util/rubyize-keys
+                (conj params {:domina_trial_int (util/uuid-to-short trial-uuid)
+                              :domina_execution_int (util/uuid-to-short ex-uuid)
+                              })))]
+    (logging/debug "prepare-env-variables res: " res)
+    res))
 
 (defn exec-script-for-params [params]
   (logging/info (str "exec-script-for-params" (select-keys params [:name])))
+  (logging/debug "exec-script-for-params params:" params)
   (try
     (let [started {:started_at (time/now)}
           env-variables (prepare-env-variables (conj (or (:ports params) {}) (:environment_variables params)))
           working-dir (:working_dir params)
           exec-res (exec-script (:body params) 
-                                :working_dir working-dir 
-                                :env_variables env-variables 
+                                :working-dir working-dir 
+                                :env-variables env-variables 
                                 :timeout (:timeout params)
                                 :interpreter (:interpreter params))] 
       (conj params 
