@@ -8,6 +8,10 @@
     [clj-time.core :as time]
     [clj-time.format :as time-format]))
 
+(clojure.core/extend-type clojure.lang.Agent clojure.data.json/JSONWriter
+  (-write [object out]
+          (clojure.data.json/-write @object out)))
+
 (clojure.core/extend-type clojure.lang.Atom clojure.data.json/JSONWriter
   (-write [object out]
           (clojure.data.json/-write @object out)))

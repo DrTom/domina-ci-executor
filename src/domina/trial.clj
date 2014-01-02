@@ -64,6 +64,7 @@
 
 
 (defonce ^:private trials-atom (atom {}))
+(defn get-trials [] @trials-atom)
 
 ;(clojure.pprint/pprint trials-atom)
  

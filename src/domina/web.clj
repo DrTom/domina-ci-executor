@@ -9,6 +9,7 @@
   (:require 
     [clj-time.core :as time]
     [clojure.data :as data]
+    [clojure.data.json :as json]
     [clojure.stacktrace :as stacktrace]
     [clojure.tools.logging :as logging]
     [compojure.core]
@@ -45,10 +46,18 @@
       (logging/error request (with-out-str (stacktrace/print-stack-trace e)))
       {:status 422 :body (str e)})))
 
+
+(defn get-trials []
+  (let [trials (trial/get-trials)]
+     {:status 201 
+      :headers {"Content-Type" "application/json"}
+      :body (json/write-str trials)})) 
+
 (compojure.core/defroutes app-routes
   (compojure.core/GET "/hello" [] (say-hello))
   (compojure.core/POST "/ping" [] (ping))
-  (compojure.core/POST "/execute" req (execute req)))
+  (compojure.core/POST "/execute" req (execute req))
+  (compojure.core/GET "/trials" [] (get-trials)))
 
 (def app
   ( -> (compojure.handler/site app-routes)
