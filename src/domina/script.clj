@@ -56,7 +56,15 @@
 ;; ###########################################################################
 
 
-(defn process [scripts process-result] 
+(defn terminate-services [scripts result-handler]
+  (doseq [script-atom scripts]
+    (when (= "service" (:type @script-atom))
+      (let [new-params (exec/stop-service @script-atom)
+            final-params (conj @script-atom new-params)]
+        (reset! script-atom final-params)
+        (when result-handler (result-handler final-params))))))
+
+(defn process [scripts process-result-handler] 
   (logging/info (str "processing scripts: " scripts))
 
   (loop [scripts scripts 
@@ -99,7 +107,9 @@
 
           (logging/debug "executed script: " script " with result: " script-exec-result)
           (swap! script-atom (fn [script script-exec-result] (conj script script-exec-result)) script-exec-result)
-          (when process-result (process-result script-exec-result))
+          (when process-result-handler (process-result-handler script-exec-result))
           (recur (rest scripts) 
-                 (or has-failures  (not= "success" (:state script-exec-result)))))))))
+                 (or has-failures  (not= "success" (:state script-exec-result))))))))
+  
+   (terminate-services scripts process-result-handler))
 

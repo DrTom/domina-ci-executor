@@ -63,9 +63,21 @@
                (instance? ExecuteWatchdog (:watchdog service)) => true)
          (fact "it contains a not yet realized :exec_promise" 
                (realized? (:exec_promise service)) => false)
+
+         (facts "the service contains all the other properties" 
+                (fact (contains? service :error) => true)
+                (fact (contains? service :exit_status) => true)
+                (fact (contains? service :started_at) => true)
+                (fact (contains? service :finished_at) => true)
+                (fact (contains? service :interpreter) => true)
+                (fact (contains? service :started_at) => true)
+                (fact (contains? service :state) =>  true)
+                (fact (contains? service :stderr) => true)
+                (fact (contains? service :stdout) => true))
+
          (facts "calling destroyProcess() on the watchdog" 
                 (.destroyProcess (:watchdog service))
                 (fact "realizes the promise"
-                      (realized? (:exec_promise service)) => true)
-                service)))
+                      (realized? (:exec_promise service)) => true))
+         service))
 

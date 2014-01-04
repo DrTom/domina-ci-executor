@@ -10,6 +10,7 @@
   (:use 
     [clojure.test]
     [domina.script]
+    [midje.sweet]
   ))
 
 

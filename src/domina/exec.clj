@@ -100,10 +100,16 @@
                                          :dir working-dir  
                                          :watchdog watchdog})]
       (conj params 
-            {:started_at started
-             :watchdog watchdog
+            started 
+            {:finished_at (time/now)
+             :exit_status 0 
+             :state "success" 
+             :stdout "" 
+             :stderr "" 
+             :error ""
+             :interpreter interpreter }
+            {:watchdog watchdog
              :exec_promise exec-promise
-             :interpreter interpreter 
              }))
     (catch Exception e
       (logging/error (with-out-str (print-stack-trace e)))
@@ -111,5 +117,16 @@
             {:state "failed"
              :error (with-out-str (print-stack-trace e))
              }))))
+
+(defn stop-service [params]
+  (.destroyProcess (:watchdog params))
+  (let [exec-res (deref (:exec_promise params))]
+    (conj params 
+          {:finished_at (time/now)
+           :exit_status (:exit exec-res)
+           :stdout (:out exec-res)
+           :stderr (:err exec-res) 
+           :error (:error exec-res)
+           })))
 
 
