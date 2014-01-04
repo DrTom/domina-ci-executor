@@ -6,6 +6,7 @@
   (:import 
     [java.io File]
     [java.util UUID]
+    [org.apache.commons.exec ExecuteWatchdog]
     )
   (:require
     [clj-commons-exec :as commons-exec]
@@ -27,32 +28,17 @@
 
 
 
-(def ^:private defaul-system-interpreter
+(def defaul-system-interpreter
   (condp = (clojure.string/lower-case (System/getProperty "os.name"))
     "windows" ["cmd.exe" "/c"]
     ["bash" "-l"]))
 
-(defn exec-script 
-  [script & {:keys [timeout working-dir env-variables interpreter]}]
-  "Runs the script in the (default) interpreter by passing the full path as the
-  last argument. Blocks until the script exits or times out."
-  (let [timeout (or timeout 200)
-        script-file (File/createTempFile "domina_", ".script") 
-        env-variables (or env-variables {})
-        interpreter (or interpreter defaul-system-interpreter)]
-    (logging/info (str "exec-script" (reduce (fn [s x] (str s " # " x)) [script timeout env-variables interpreter working-dir])))
-    (logging/debug "exec-script env-variables: " env-variables)
+(defn prepare-script-file [script]
+  (let [script-file (File/createTempFile "domina_", ".script")]
     (.deleteOnExit script-file)
     (spit script-file script)
     (.setExecutable script-file true)
-    (let 
-      [command (conj interpreter (.getAbsolutePath script-file))
-       res (deref (commons-exec/sh command 
-                                   {:env (conj {} (System/getenv) env-variables)
-                                    :dir working-dir  
-                                    :watchdog (* 1000 timeout)}))]
-      (conj res {:interpreter interpreter}))))
-
+    script-file))
 
 (defn ^:private prepare-env-variables [{ex-uuid :domina_execution_uuid trial-uuid :domina_trial_uuid :as params}]
   (logging/debug "prepare-env-variables :domina_execution_uuid " ex-uuid ":domina_trial_uuid " trial-uuid " params: " params)
@@ -71,11 +57,14 @@
     (let [started {:started_at (time/now)}
           env-variables (prepare-env-variables (conj (or (:ports params) {}) (:environment_variables params)))
           working-dir (:working_dir params)
-          exec-res (exec-script (:body params) 
-                                :working-dir working-dir 
-                                :env-variables env-variables 
-                                :timeout (:timeout params)
-                                :interpreter (:interpreter params))] 
+          timeout (or (:timeout params) 200)
+          interpreter (or (:interpreter params) defaul-system-interpreter)
+          script-file (prepare-script-file (:body params))  
+          command (conj interpreter (.getAbsolutePath script-file))
+          exec-res (deref (commons-exec/sh command 
+                                           {:env (conj {} (System/getenv) env-variables)
+                                            :dir working-dir  
+                                            :watchdog (* 1000 timeout)}))]
       (conj params 
             started 
             {:finished_at (time/now)
@@ -86,7 +75,7 @@
              :stdout (:out exec-res)
              :stderr (:err exec-res) 
              :error (:error exec-res)
-             :interpreter (:interpreter exec-res)
+             :interpreter interpreter
              }))
     (catch Exception e
       (do
@@ -95,3 +84,32 @@
               {:state "failed"
                :error (with-out-str (print-stack-trace e))
                })))))
+
+(defn start-service-process [params]
+  (try
+    (let [started {:started_at (time/now)}
+          env-variables (prepare-env-variables (conj (or (:ports params) {}) (:environment_variables params)))
+          working-dir (:working_dir params)
+          timeout (or (when-let [s (:timeout params)] (* 1000 s))  ExecuteWatchdog/INFINITE_TIMEOUT)
+          watchdog (ExecuteWatchdog. timeout) 
+          interpreter (or (:interpreter params) defaul-system-interpreter)
+          script-file (prepare-script-file (:body params))  
+          command (conj interpreter (.getAbsolutePath script-file))
+          exec-promise (commons-exec/sh command 
+                                        {:env (conj {} (System/getenv) env-variables)
+                                         :dir working-dir  
+                                         :watchdog watchdog})]
+      (conj params 
+            {:started_at started
+             :watchdog watchdog
+             :exec_promise exec-promise
+             :interpreter interpreter 
+             }))
+    (catch Exception e
+      (logging/error (with-out-str (print-stack-trace e)))
+      (conj params
+            {:state "failed"
+             :error (with-out-str (print-stack-trace e))
+             }))))
+
+

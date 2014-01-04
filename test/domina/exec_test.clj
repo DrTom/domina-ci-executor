@@ -3,6 +3,9 @@
 ; See the "LICENSE.txt" file provided with this software.
 
 (ns domina.exec-test
+  (:import 
+    [org.apache.commons.exec ExecuteWatchdog]
+    )
   (:require  
     [clojure.pprint :as pprint]
     [domina.util :as util]
@@ -10,44 +13,59 @@
   (:use 
     [clojure.test]
     [domina.exec]
-  ))
+    [midje.sweet]
+    ))
 
+(facts "about the return parameters of successful test-exec-script-for-params" 
+       (let [def-params {:name "testscript"
+                         :body "env | sort"
+                         :working_dir  (System/getProperty "user.home")
+                         :environment_variables{
+                                                :domina_trial_uuid (util/random-uuid)
+                                                :domina_execution_uuid (util/random-uuid)}
+                         }
+             res (exec-script-for-params def-params)]
+         (fact (contains? res :error) => true)
+         (fact (contains? res :exit_status) => true)
+         (fact (contains? res :started_at) => true)
+         (fact (contains? res :finished_at) => true)
+         (fact (contains? res :interpreter) => true)
+         (fact (contains? res :started_at) => true)
+         (fact (contains? res :state) =>  true)
+         (fact (contains? res :stderr) => true)
+         (fact (contains? res :stdout) => true)))
+       
 
+(facts "about exec-script-for-params running into timeout"
+       (let [def-params {:name "testscript"
+                         :body "sleep 2"
+                         :timeout 1
+                         :working_dir  (System/getProperty "user.home")
+                         :environment_variables{
+                                                :domina_trial_uuid (util/random-uuid)
+                                                :domina_execution_uuid (util/random-uuid)}}
+             res (exec-script-for-params def-params)]
+         (fact "the exit_status is defined" 
+               (not= nil (:exit_status res)) => true)
+         (fact "the exit_status is not null" 
+               (= 0 (:exit_status res)) => false
+               )))
 
-(deftest test-exec-script
-
-  (testing "invoking exec-script succeeds and returns expected parameters" 
-    (let [res (exec-script "ls")]
-      (is (contains? res :out ))
-      (is (not= (:exit res) nil))
-      (is (= (:exit res) 0))
-      ))
-
-  (testing "invoking exec-script with timeout" 
-    (let [res (exec-script "sleep 2; ls" :timeout 1)]
-      (println res)
-      (is (not= (:exit res) 0))
-      )))
-
-(deftest test-exec-script-for-params
-  (let [def-params {:name "testscript"
-                    :body "env | sort"
-                    :working_dir  (System/getProperty "user.home")
-                    :environment_variables{
-                               :domina_trial_uuid (util/random-uuid)
-                               :domina_execution_uuid (util/random-uuid)}
-                    }]
-    (testing "invoking exec-script-for-params" 
-      (let [res (exec-script-for-params def-params)]
-        (is (contains? res :error))
-        (is (contains? res :exit_status))
-        (is (contains? res :finished_at))
-        (is (contains? res :interpreter))
-        (is (contains? res :started_at))
-        (is (contains? res :state))
-        (is (contains? res :stderr))
-        (is (contains? res :stdout))
-        ;(testing "stdout of 'env | sort' includes the defined variables"
-        ;  (is (not= nil (re-find #"(?is)UUID" (:stdout res)))))
-        ))))
+(facts about "starting a long running service with start-service-process" 
+       (let [params {:name "service"
+                     :body "sleep 60"
+                     :working_dir  (System/getProperty "user.home")
+                     :environment_variables{
+                                            :domina_trial_uuid (util/random-uuid)
+                                            :domina_execution_uuid (util/random-uuid)}}
+             service (start-service-process params)]
+         (fact "it contains a watchdog " 
+               (instance? ExecuteWatchdog (:watchdog service)) => true)
+         (fact "it contains a not yet realized :exec_promise" 
+               (realized? (:exec_promise service)) => false)
+         (facts "calling destroyProcess() on the watchdog" 
+                (.destroyProcess (:watchdog service))
+                (fact "realizes the promise"
+                      (realized? (:exec_promise service)) => true)
+                service)))
 

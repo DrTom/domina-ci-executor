@@ -3,13 +3,15 @@
 ; See the "LICENSE.txt" file provided with this software.
 
 (ns domina.script
-  (:use 
-    [clj-logging-config.log4j :only (set-logger!)]
-    )
   (:require 
     [domina.exec :as exec]
     [clojure.tools.logging :as logging]
-    ))
+    [clj-commons-exec :as commons-exec]
+    )
+  (:use 
+    [clj-logging-config.log4j :only (set-logger!)]
+    )
+  )
 
 
 ;(set-logger! :level :debug)
@@ -53,6 +55,7 @@
 
 ;; ###########################################################################
 
+
 (defn process [scripts process-result] 
   (logging/info (str "processing scripts: " scripts))
 
@@ -70,6 +73,11 @@
                     (case (:type script)
 
                       "prepare_executor" (memoized-executor-exec script)
+
+                      "service" (if (not has-failures)
+                                  (exec/start-service-process script)
+                                  {:state "skipped" 
+                                   :error "skipped because of previous failure"})
 
                       ("main" nil) (if (not has-failures)
                                      (exec/exec-script-for-params script)
