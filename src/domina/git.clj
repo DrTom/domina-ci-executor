@@ -109,6 +109,15 @@
                             (:git_url params) (:repository_id params) (:git_commit_id params))
           working-dir (str (:working-dir @shared/conf) (File/separator) working-dir-id) ]
       (clone-to-working-dir repository-path (:git_commit_id params) working-dir)
+      (let [submodules (:git_submodules params)]
+        (logging/debug "SUBMODULES " submodules)
+        (doseq [submodule submodules]
+          (logging/debug "SUBMODULE " submodule)
+          (let [submodule-repository-path (serialized-initialize-or-update-if-required 
+                                            (:git_url submodule) (:repository_id submodule) (:git_commit_id submodule))
+                submodule-working-dir (clojure.string/join File/separator (concat [working-dir] (:subpath_segments submodule)))]
+            (util/exec-successfully-or-throw ["mkdir" "-p" submodule-working-dir])
+            (clone-to-working-dir submodule-repository-path (:git_commit_id submodule) submodule-working-dir))))
       (logging/debug "WORKING-DIR " working-dir)
       working-dir)))
 
