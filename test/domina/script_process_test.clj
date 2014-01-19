@@ -8,19 +8,20 @@
     [midje.sweet]
     ))
 
-
 (facts "process with value 0 exiting scripts" 
        (let [ script1-atom (atom {:name "show env" 
-                                  :environment_variables{:domina_trial_uuid (util/random-uuid)
-                                                         :domina_execution_uuid (util/random-uuid) 
-                                                         :x 5 
-                                                         "Y" 7}
-                                 :body "env | sort"
-                                 :working_dir  (System/getProperty "user.home")
-                                 })
+                                  :environment_variables {:domina_task_id (util/random-uuid)
+                                                          :domina_trial_id (util/random-uuid)
+                                                          :domina_execution_id (util/random-uuid)
+                                                          :x 5 
+                                                          "Y" 7}
+                                  :body "env | sort"
+                                  :working_dir  (System/getProperty "user.home")
+                                  })
              script2-atom (atom {:name "ls" 
-                                  :environment_variables{:domina_trial_uuid (util/random-uuid)
-                                                         :domina_execution_uuid (util/random-uuid)}
+                                 :environment_variables {:domina_task_id (util/random-uuid)
+                                                         :domina_trial_id (util/random-uuid)
+                                                         :domina_execution_id (util/random-uuid)}
                                  :body "ls -lah"
                                  :working_dir  (System/getProperty "user.home")
                                  })
@@ -38,18 +39,18 @@
 
              script1-atom (atom {:name "random" 
                                  :type "prepare_executor"
-                                 :environment_variables{:domina_trial_uuid (util/random-uuid)
-                                                        :domina_execution_uuid execution-id
-                                                        }
+                                 :environment_variables {:domina_task_id (util/random-uuid)
+                                                         :domina_trial_id (util/random-uuid)
+                                                         :domina_execution_id (util/random-uuid)}
                                  :body "echo $RANDOM"
                                  :working_dir  (System/getProperty "user.home")
                                  })
 
              script2-atom (atom {:name "random" 
                                  :type "prepare_executor"
-                                 :environment_variables{:domina_trial_uuid (util/random-uuid)
-                                                        :domina_execution_uuid execution-id
-                                                        }
+                                 :environment_variables {:domina_task_id (util/random-uuid)
+                                                         :domina_trial_id (util/random-uuid)
+                                                         :domina_execution_id (util/random-uuid)}
                                  :body "echo $RANDOM"
                                  :working_dir  (System/getProperty "user.home")
                                  })
@@ -70,17 +71,17 @@
 
              script1-atom (atom {:name "sleeping service" 
                                  :type "service"
-                                 :environment_variables{:domina_trial_uuid (util/random-uuid)
-                                                        :domina_execution_uuid execution-id
-                                                        }
+                                 :environment_variables {:domina_task_id (util/random-uuid)
+                                                         :domina_trial_id (util/random-uuid)
+                                                         :domina_execution_id (util/random-uuid)}
                                  :body "sleep 10"
                                  :working_dir  (System/getProperty "user.home")
                                  })
 
              script2-atom (atom {:name "list env" 
-                                 :environment_variables{:domina_trial_uuid (util/random-uuid)
-                                                        :domina_execution_uuid execution-id
-                                                        }
+                                 :environment_variables {:domina_task_id (util/random-uuid)
+                                                         :domina_trial_id (util/random-uuid)
+                                                         :domina_execution_id (util/random-uuid)}
                                  :body "env | sort"
                                  :working_dir  (System/getProperty "user.home")
                                  })

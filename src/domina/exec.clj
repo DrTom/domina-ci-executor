@@ -40,12 +40,13 @@
     (.setExecutable script-file true)
     script-file))
 
-(defn ^:private prepare-env-variables [{ex-uuid :domina_execution_uuid trial-uuid :domina_trial_uuid :as params}]
-  (logging/debug "prepare-env-variables :domina_execution_uuid " ex-uuid ":domina_trial_uuid " trial-uuid " params: " params)
+(defn ^:private prepare-env-variables [{ex-uuid :domina_execution_id trial-uuid :domina_trial_id task-uuid :domina_task_id :as params}]
+  (logging/debug "prepare-env-variables :domina_execution_id " ex-uuid ":domina_trial_id " trial-uuid " params: " params)
   (let [res (util/upper-case-keys 
               (util/rubyize-keys
-                (conj params {:domina_trial_int (util/uuid-to-short trial-uuid)
-                              :domina_execution_int (util/uuid-to-short ex-uuid)
+                (conj params {:domina_execution_int (util/uuid-to-short ex-uuid)
+                              :domina_task_int (util/uuid-to-short task-uuid)
+                              :domina_trial_int (util/uuid-to-short trial-uuid)
                               })))]
     (logging/debug "prepare-env-variables res: " res)
     res))

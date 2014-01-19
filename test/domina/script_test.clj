@@ -21,10 +21,9 @@
     (let [script-params {:name "list-env"
                          :body "env | sort"
                          :working_dir  (System/getProperty "user.home")
-                         :environment_variables{
-                                    :domina_trial_uuid (util/random-uuid)
-                                    :domina_execution_uuid (util/random-uuid) }
-                         }]
+                         :environment_variables {:domina_task_id (util/random-uuid)
+                                                 :domina_trial_id (util/random-uuid)
+                                                 :domina_execution_id (util/random-uuid)}}]
 
       (testing "invoking memoized-executor-exec" 
         (let [res (memoized-executor-exec  script-params)]
@@ -61,11 +60,9 @@
     (let [script-params {:name "failing one"
                          :body "env |sort; exit -1"
                          :working_dir  (System/getProperty "user.home")
-                         :environment_variables {
-                                    :domina_trial_uuid (util/random-uuid)
-                                    :domina_execution_uuid (util/random-uuid)}
-                         }]
-
+                         :environment_variables {:domina_task_id (util/random-uuid)
+                                                 :domina_trial_id (util/random-uuid)
+                                                 :domina_execution_id (util/random-uuid)}}]
       (testing "invoking memoized-executor-exec" 
         (let [res (memoized-executor-exec  script-params)]
           (println (str res))

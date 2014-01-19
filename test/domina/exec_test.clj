@@ -20,10 +20,9 @@
        (let [def-params {:name "testscript"
                          :body "env | sort"
                          :working_dir  (System/getProperty "user.home")
-                         :environment_variables{
-                                                :domina_trial_uuid (util/random-uuid)
-                                                :domina_execution_uuid (util/random-uuid)}
-                         }
+                         :environment_variables {:domina_task_id (util/random-uuid)
+                                                 :domina_trial_id (util/random-uuid)
+                                                 :domina_execution_id (util/random-uuid)}}
              res (exec-script-for-params def-params)]
          (fact (contains? res :error) => true)
          (fact (contains? res :exit_status) => true)
@@ -41,11 +40,11 @@
                          :body "sleep 2"
                          :timeout 1
                          :working_dir  (System/getProperty "user.home")
-                         :environment_variables{
-                                                :domina_trial_uuid (util/random-uuid)
-                                                :domina_execution_uuid (util/random-uuid)}}
+                         :environment_variables {:domina_task_id (util/random-uuid)
+                                                 :domina_trial_id (util/random-uuid)
+                                                 :domina_execution_id (util/random-uuid)}}
              res (exec-script-for-params def-params)]
-         (fact "the exit_status is defined" 
+         (fact "the exit_status is defined" :wip
                (not= nil (:exit_status res)) => true)
          (fact "the exit_status is not null" 
                (= 0 (:exit_status res)) => false
@@ -55,9 +54,9 @@
        (let [params {:name "service"
                      :body "sleep 60"
                      :working_dir  (System/getProperty "user.home")
-                     :environment_variables{
-                                            :domina_trial_uuid (util/random-uuid)
-                                            :domina_execution_uuid (util/random-uuid)}}
+                     :environment_variables {:domina_task_id (util/random-uuid)
+                                             :domina_trial_id (util/random-uuid)
+                                             :domina_execution_id (util/random-uuid)}}
              service (start-service-process params)]
          (fact "it contains a watchdog " 
                (instance? ExecuteWatchdog (:watchdog service)) => true)

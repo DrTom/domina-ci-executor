@@ -102,7 +102,7 @@
 
 (defn prepare-and-create-working-dir [params]
   (logging/debug "prepare-and-create-working-dir" params)
-  (let [working-dir-id (:domina_trial_uuid params)]
+  (let [working-dir-id (:domina_trial_id params)]
     (when-not (and working-dir-id (not (clojure.string/blank? working-dir-id)))
       (throw (java.lang.IllegalArgumentException. "invalid arguments of prepare-and-create-working-dir" )))
     (let [repository-path (serialized-initialize-or-update-if-required 

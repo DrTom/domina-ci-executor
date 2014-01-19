@@ -17,7 +17,7 @@
 
 
 (def default-trial-exec-params 
-  {:domina_trial_uuid (util/random-uuid)
+  {:domina_trial_id (util/random-uuid)
    :patch_url "http://localhost:8888/trial"
    })
 

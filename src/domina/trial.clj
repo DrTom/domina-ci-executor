@@ -54,8 +54,8 @@
                             (atom (conj script-params 
                                         (select-keys @params-atom
                                                      [:environment_variables 
-                                                      :domina_execution_uuid 
-                                                      :domina_trial_uuid 
+                                                      :domina_execution_id 
+                                                      :domina_trial_id 
                                                       :working_dir ]))))
                           initial-scripts)]
     (swap! params-atom #(conj %1 {:scripts %2}) script-atoms)
@@ -72,7 +72,7 @@
   "Creates a new trial, stores it in trials under it's id and returns the
   trial"
   [params]
-  (let [id (:domina_trial_uuid params)]
+  (let [id (:domina_trial_id params)]
     (swap! trials-atom 
            (fn [trials params id]
              (conj trials {id {:params-atom (atom  params)
@@ -125,8 +125,8 @@
 
 
 (defn validate-execute-params [params]
-  (assert (not= (:domina_trial_uuid params) nil))
-  (assert (not (clojure.string/blank? (:domina_trial_uuid params))) 
+  (assert (not= (:domina_trial_id params) nil))
+  (assert (not (clojure.string/blank? (:domina_trial_id params))) 
           ))
 
 (defn execute [params] 
