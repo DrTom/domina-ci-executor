@@ -55,8 +55,10 @@
   (logging/debug "exec-script-for-params params:" params)
   (try
     (let [started {:started_at (time/now)}
-          env-variables (prepare-env-variables (conj (or (:ports params) {}) (:environment_variables params)))
           working-dir (:working_dir params)
+          env-variables (prepare-env-variables (conj {:domina_working_dir working-dir} 
+                                                     (or (:ports params) {}) 
+                                                     (:environment_variables params)))
           timeout (or (:timeout params) 200)
           interpreter (or (:interpreter params) defaul-system-interpreter)
           script-file (prepare-script-file (:body params))  
