@@ -38,7 +38,7 @@
   (try 
     (let [trial-parameters  (clojure.walk/keywordize-keys (:json-params request))]
       (logging/debug "trial-parameters" trial-parameters)
-      (when-not (:domina_trial_uuid trial-parameters) (throw (IllegalStateException. ":domina_trial_uuid parameter must be present")))
+      (when-not (:domina_trial_id trial-parameters) (throw (IllegalStateException. ":domina_trial_uuid parameter must be present")))
       (when-not (:patch_url trial-parameters) (throw (IllegalStateException. ":patch_url parameter must be present")))
       (future (trial/execute trial-parameters))
       {:status 204})
