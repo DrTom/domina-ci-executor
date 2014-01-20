@@ -76,6 +76,7 @@
 
          (facts "calling destroyProcess() on the watchdog" 
                 (.destroyProcess (:watchdog service))
+                (Thread/sleep 500)
                 (fact "realizes the promise"
                       (realized? (:exec_promise service)) => true))
          service))
