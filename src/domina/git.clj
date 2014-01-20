@@ -96,8 +96,10 @@
   (logging/debug "clone-to-working-dir " repository-path " " commit-id " " working-dir)
   (logging/debug " git " " clone " " --shared " repository-path working-dir)
   (util/exec-successfully-or-throw ["git" "clone" "--shared" repository-path working-dir])
-  (util/exec-successfully-or-throw ["git" "checkout" commit-id working-dir]
-                                   {:dir working-dir})
+  (let [git-checkout-args ["git" "checkout" commit-id]
+        git-checkout-params {:dir working-dir}]
+    (logging/debug "GIT CHECKOUT" git-checkout-args " " git-checkout-params)
+    (util/exec-successfully-or-throw git-checkout-args git-checkout-params))
   true)
 
 (defn prepare-and-create-working-dir [params]
