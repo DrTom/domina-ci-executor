@@ -5,6 +5,7 @@
 .lein-failures
 .lein-plugins
 .lein-repl-history
+.nrepl-port
 /checkouts
 /classes
 /classes/
@@ -14,5 +15,6 @@
 /targets/
 /tmp
 domina_conf.clj
+domina_conf.yml
 pom.xml
 pom.xml.asc

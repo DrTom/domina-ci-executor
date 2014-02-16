@@ -29,10 +29,10 @@
      :nrepl nrepl/conf
      :reporter reporter/conf
      :web web/conf} 
-    "/etc/domina/conf.clj"
-    "/etc/domina_conf.clj"
-    (str (System/getProperty "user.home") (File/separator) "domina_conf.clj")
-    "domina_conf.clj"))
+    "/etc/domina/conf"
+    "/etc/domina_conf"
+    (str (System/getProperty "user.home") (File/separator) "domina_conf")
+    "domina_conf"))
 
 (defn -main
   [& args]

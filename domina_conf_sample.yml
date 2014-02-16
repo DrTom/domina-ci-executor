@@ -1,0 +1,14 @@
+shared:
+  working-dir: "/Users/thomas/Programming/DOMINA/domina_ci_executor/tmp/domina_working_dir"
+  git-repos-dir: "/Users/thomas/Programming/DOMINA/domina_ci_executor/tmp/domina_git_repos" 
+reporter: 
+  max-retries: 1
+  retry-ms-factor: 1000
+nrepl: 
+  port: 7888
+  bind: "127.0.0.1"
+  enabled: false
+web: 
+  host: "0.0.0.0"
+  port: 8088
+  ssl-port: 8443

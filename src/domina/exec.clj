@@ -41,6 +41,7 @@
     script-file))
 
 (defn ^:private prepare-env-variables [{ex-uuid :domina_execution_id trial-uuid :domina_trial_id task-uuid :domina_task_id :as params}]
+  ; TODO pull-up the complete params here; there is some duplication 
   (logging/debug "prepare-env-variables :domina_execution_id " ex-uuid ":domina_trial_id " trial-uuid " params: " params)
   (let [res (util/upper-case-keys 
               (util/rubyize-keys
@@ -52,6 +53,7 @@
     res))
 
 (defn exec-script-for-params [params]
+
   (logging/info (str "exec-script-for-params" (select-keys params [:name])))
   (logging/debug "exec-script-for-params params:" params)
   (try
@@ -91,8 +93,11 @@
 (defn start-service-process [params]
   (try
     (let [started {:started_at (time/now)}
-          env-variables (prepare-env-variables (conj (or (:ports params) {}) (:environment_variables params)))
           working-dir (:working_dir params)
+          env-variables (prepare-env-variables 
+                          (conj {:domina_working_dir working-dir} 
+                                (or (:ports params) {}) 
+                                (:environment_variables params)))
           timeout (or (when-let [s (:timeout params)] (* 1000 s))  ExecuteWatchdog/INFINITE_TIMEOUT)
           watchdog (ExecuteWatchdog. timeout) 
           interpreter (or (:interpreter params) defaul-system-interpreter)

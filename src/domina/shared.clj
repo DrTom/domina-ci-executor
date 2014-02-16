@@ -19,7 +19,6 @@
                      :git-repos-dir (str (System/getProperty "user.home") (File/separator) "domina_git-repos-dir" )
                      }))
 
-
 (defn initialize []
   (.mkdir (File. (:working-dir @conf)))
   (.mkdir (File. (:git-repos-dir @conf))))

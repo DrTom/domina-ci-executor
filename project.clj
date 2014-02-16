@@ -7,6 +7,7 @@
                  [clj-http "0.7.5"]
                  [clj-logging-config "1.9.10"]
                  [clj-time "0.5.1"]
+                 [clj-yaml "0.3.1"]
                  [compojure "1.1.5"]
                  [log4j/log4j "1.2.17" :exclusions [javax.mail/mail javax.jms/jms com.sun.jdmk/jmxtools com.sun.jmx/jmxri]]
                  [me.raynes/fs "1.4.4"]

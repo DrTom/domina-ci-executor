@@ -10,6 +10,7 @@
     [clj-commons-exec :as commons-exec]
     [clj-time.core :as time]
     [clj-time.format :as time-format]
+    [clj-yaml.core :as yaml]
     [clojure.pprint :as pprint]
     [clojure.stacktrace :as stacktrace]
     [clojure.string :as string]
@@ -98,20 +99,27 @@
         ]
     dirs-seq2
     ))
+
 (defn try-read-and-apply-config [configs & filenames]
-  (doseq [filename filenames]
-    (try 
-      (let [file-config (read-string(slurp filename))]
-        (logging/info "successfully read " filename " with content: " file-config)
-        (doseq [[k config] configs]
-          (if-let [config-section (k file-config)]
-            (do 
-              (logging/info "amending config " k)
-              (ammend-config
-                config
-                config-section)))))
-      (catch Exception e (do (logging/info (str "could not read " filename " " e))))
-      )))
+  (doseq [file-ending ["clj" "yml"]]
+    (doseq [basename filenames]
+      (let [filename (str basename "." file-ending)]
+        (try 
+          (when-let [config-string (slurp filename)]
+            (logging/info "successfully read " filename)
+            (when-let [file-config (cond (re-matches #"(?i).*yml" filename) (yaml/parse-string config-string)
+                                         (re-matches #"(?i).*clj" filename) (read-string config-string)
+                                         :else (throw (IllegalStateException. (str "could not determine parser for " filename))))]
+              (logging/info "successfully read " filename " with content: " file-config)
+              (doseq [[k config] configs]
+                (if-let [config-section (k file-config)]
+                  (do 
+                    (logging/info "amending config " k)
+                    (ammend-config
+                      config
+                      config-section))))))
+          (catch Exception e (do (logging/info (str "could not read " filename " " e))))
+          )))))
 
 (defn upper-case-keys [some-hash]
   (into {} (map (fn [p] [ (string/upper-case (name (first p))) (second p)] ) some-hash)))
